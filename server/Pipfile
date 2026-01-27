@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+flask = "*"
+flask-restful = "*"
+sqlalchemy = "*"
+flask-sqlalchemy = "*"
+flask-cors = "*"
+flask-bcrypt = "*"
+faker = "*"
+honcho = "*"
+sqlalchemy-serializer = "*"
+gunicorn = "*"
+psycopg2-binary = "*"
+python-dotenv = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"
