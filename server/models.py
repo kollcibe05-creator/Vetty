@@ -17,6 +17,8 @@ class Product(db.Model, SerializerMixin):
     stock_quantity = db.Column(db.Integer)
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"))
 
+    reviews = db.relationship("Review", back_populates="product", )
+
 
 class Service(db.Model, SerializerMixin):
     __tablename__ = "services"
@@ -28,7 +30,12 @@ class Service(db.Model, SerializerMixin):
     base_price = db.Column(db.Integer)
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"))
 
+    reviews = db.relationship("Review", back_populates="service", cascade="all, delete-orphan")
+    user = db.relationship("User", back_populates="services")
+    category = db.relationship("Category", back_populates="services")
+    appointments = db.relationship("Appointment", back_populates="service", )
 
+    serialize_rules=( "-reviews.user", "-user.services", "-categories.services", "-appointments.service",)
 class Review(db.Model, SerializerMixin):
     __tablename__ = "reviews"
 
@@ -37,12 +44,17 @@ class Review(db.Model, SerializerMixin):
     rating = db.Column(db.Integer)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
-    #can be either of them be null 
+    #can  either of them be null 
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
     service_id = db.Column(db.Integer, db.ForeignKey("services.id"))
 
+    user = db.relationship("User", back_populates="reviews")
 
+    product = db.relationship("Product", back_populates="reviews")
 
+    Service = db.relationship("Service", back_populates="reviews")
+
+    serialize_rules = ("-users.reviews", "-products.reviews", "-services.reviews", )
 
 class Category(db.Model, SerializerMixin):
     __tablename__ = "categories"
