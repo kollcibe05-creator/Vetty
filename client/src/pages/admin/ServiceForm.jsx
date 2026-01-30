@@ -1,14 +1,35 @@
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { setPendingApprovals } from '../../features/adminSlice';
 
 // Admin page to add or edit veterinary services
 const ServiceForm = () => {
+  const dispatch = useDispatch();
+
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Placeholder for form submission logic
-    console.log({ name, price });
+
+    // Create a new service object (demo, replace with API call later)
+    const newService = {
+      id: Date.now(), // simple unique id for demo
+      type: 'service',
+      name,
+      basePrice: price,
+    };
+
+    // Add this new service to pending approvals
+    dispatch((prev) =>
+      dispatch(setPendingApprovals((prev) => [...prev, newService]))
+    );
+
+    console.log('Service submitted:', newService);
+
+    // Clear form
+    setName('');
+    setPrice('');
   };
 
   return (
@@ -21,6 +42,7 @@ const ServiceForm = () => {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="Enter service name"
           />
         </div>
         <div>
@@ -29,6 +51,7 @@ const ServiceForm = () => {
             type="number"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
+            placeholder="Enter base price"
           />
         </div>
         <button type="submit">Save Service</button>
