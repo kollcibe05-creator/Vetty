@@ -7,7 +7,6 @@ from sqlalchemy.sql import func
 from config import db, bcrypt
 
 
-
 class Product(db.Model, SerializerMixin):
     __tablename__ = "products"
 

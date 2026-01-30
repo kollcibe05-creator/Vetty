@@ -17,6 +17,7 @@ gunicorn = "*"
 psycopg2-binary = "*"
 python-dotenv = "*"
 pytest = "*"
+flask-migrate = "*"
 
 [dev-packages]
 
