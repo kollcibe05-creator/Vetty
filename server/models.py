@@ -53,3 +53,19 @@ class Category(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     category_type = db.Column(db.String)
+
+
+class DeliveryZone(db.Model, SerializerMixin):
+    __tablename__ = "delivery_zones"
+
+    id = db.Column(db.Integer, primary_key=True)
+    zone_name = db.Column(db.String, nullable=False)
+    delivery_fee = db.Column(db.Integer, nullable=False)
+
+
+class InventoryAlert(db.Model, SerializerMixin):
+    __tablename__ = "inventory_alerts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
+    threshold = db.Column(db.Integer, nullable=False)
