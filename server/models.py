@@ -37,14 +37,11 @@ class Review(db.Model, SerializerMixin):
     rating = db.Column(db.Integer)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
-    #Need resolution
+    #can be either of them be null 
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
     service_id = db.Column(db.Integer, db.ForeignKey("services.id"))
 
-    review_type = db.Column(db.String)
-    reviewed_id = db.Column(db.Integer)
-    category_id = db.Column(db.Integer, db.ForeignKey("categories.id"))
-    ###
+
 
 
 class Category(db.Model, SerializerMixin):
