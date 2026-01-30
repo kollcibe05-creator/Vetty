@@ -1,3 +1,4 @@
+from sqlalchemy import true
 from sqlalchemy.orm import validates
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy_serializer import SerializerMixin
@@ -69,3 +70,54 @@ class InventoryAlert(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
     threshold = db.Column(db.Integer, nullable=False)
+
+class Order(db.Model, SerializerMixin):
+    __tablename__ = "orders"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    total_amount = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+class Order_Item(db.Model, SerializerMixin):
+    __tablename__ = "order_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("orders.id"))
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
+    service_id = db.Column(db.Integer, db.ForeignKey("services.id"))
+    quantity = db.Column(db.Integer, default=1)
+    subtotal = db.Column(db.Float, nullable=False)
+
+class Payment(db.Model, SerializerMixin):
+    __tablename__ = "payments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("orders.id"))
+    payment_method = db.Column(db.String, nullable=False)
+    #mpeasa specific fields
+    checkout_request_id = db.Column(db.String, unique=True, nullable=True)#from daraja API
+    merchant_request_id = db.Column(db.String, nullable=True)
+    phone_number = db.Column(db.String, nullable=True)#the number that payed
+    amount = db.Column(db.Float, nullable=False)
+    mpesa_receipt_number = db.Column(db.String, unique=True, nullable=True)#recieved from callbak
+    status = db.Column(db.String, default="Pending")#pending ,success, failed
+    payment_date = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+class Cart(db.Model, SerializerMixin):
+    __tablename__ = "carts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
+    
+    cart_items = db.relationship("CartItem", backref="cart", cascade="all, delete-orphan")
+
+class CartItem(db.Model, SerializerMixin):
+    __tablename__ = "cart_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    cart_id = db.Column(db.Integer, db.ForeignKey("carts.id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=True)
+    service_id = db.Column(db.Integer, db.ForeignKey("services.id"), nullable=True)
+    quantity = db.Column(db.Integer, default=1)
