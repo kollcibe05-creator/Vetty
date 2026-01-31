@@ -126,6 +126,8 @@ class InventoryAlert(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
     threshold = db.Column(db.Integer, nullable=False)
+    
+
 
     product = db.relationship("Product", back_populates="inventory_alerts")
 
@@ -199,24 +201,48 @@ class Payment(db.Model, SerializerMixin):
 class Cart(db.Model, SerializerMixin):
     __tablename__ = "carts"
 
+class Role(db.Model):
+    __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
-    
-    cart_items = db.relationship("CartItem", backref="cart", cascade="all, delete-orphan")
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    ##association proxy
-    products = association_proxy(
-        "cart_items",
-        "product",
-        creator=lambda productObj: CartItem(product=productObj)
-    )
+    users = db.relationship('User', backref='role', lazy='dynamic')
 
-    serialize_rules = ("-cart_items.cart")
+    def __repr__(self):
+        return f"<Role '{self.name}'>"
 
-class CartItem(db.Model, SerializerMixin):
-    __tablename__ = "cart_items"
 
+class User(db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+   
+    vetting_status = db.Column(
+        db.String(20),
+        default='not_started',
+        nullable=False
+    )  
+    def set_password(self, password):
+        from flask_bcrypt import Bcrypt
+        bcrypt = Bcrypt()
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    def check_password(self, password):
+        from flask_bcrypt import Bcrypt
+        bcrypt = Bcrypt()
+        return bcrypt.check_password_hash(self.password_hash, password)
+
+    def __repr__(self):
+        return f"<User '{self.username}' - {self.role.name if self.role else 'no role'}>"
     cart_id = db.Column(db.Integer, db.ForeignKey("carts.id"), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=True)
     quantity = db.Column(db.Integer, default=1)
