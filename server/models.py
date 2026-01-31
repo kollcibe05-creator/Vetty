@@ -3,6 +3,7 @@ from sqlalchemy.orm import validates
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.sql import func
+from sqlalchemy.ext.associationproxy import association_proxy
 
 from config import db, bcrypt
 
@@ -23,9 +24,24 @@ class Product(db.Model, SerializerMixin):
     inventory_alerts = db.relationship("InventoryAlert", back_populates="product", cascade="all, delete-orphan")
     cart_items = db.relationship("CartItem", back_populates="product", cascade="all, delete-orphan")
     order_items = db.relationship("Order_Item", back_populates="product", cascade="all, delete-orphan")
+    
+    # #association_proxy#############################
+    # inventory_alert_obj = db.relationship("InventoryAlert", back_populates="product", cascade="all, delete-orphan", useList=False)
+    # #getting category name
+    # category_name = association_proxy("category", "name")
+
+    # #Get/set threshhold value directly
+    # threshhold = association_proxy(
+    #     "inventory_alert_obj",
+    #     "threshhold",
+    #     creator=lambda value: InventoryAlert(threshhold=value)
+
+    # )
 
 
-    serialize_rules = ("-reviews.product", "categories.products", "-inventory_alerts.product", "-cart_items.product", "order_items.product",)
+
+
+    serialize_rules = ("-reviews.product", "categories.products", "-inventory_alerts.product", "-cart_items.product", "order_items.product",)  #"-inventory_alert_obj", "-category_name", "threshold"
 
 
 class Service(db.Model, SerializerMixin):
@@ -99,6 +115,10 @@ class DeliveryZone(db.Model, SerializerMixin):
     zone_name = db.Column(db.String, nullable=False)
     delivery_fee = db.Column(db.Integer, nullable=False)
 
+    orders = db.relationship("Order", back_populates="delivery_zone")
+
+    serialize_rules = ("-orders.delivery_zone",)
+
 
 class InventoryAlert(db.Model, SerializerMixin):
     __tablename__ = "inventory_alerts"
@@ -107,14 +127,30 @@ class InventoryAlert(db.Model, SerializerMixin):
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
     threshold = db.Column(db.Integer, nullable=False)
 
+    product = db.relationship("Product", back_populates="inventory_alerts")
+
+
+    serialize_rules = ("inventory_alerts.product")
+
+
 class Order(db.Model, SerializerMixin):
     __tablename__ = "orders"
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    delivery_zone_id = db.Column(db.Integer, db.ForeignKey("delivery_zones.id"))
     total_amount = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+
+    user = db.relationship("User", back_populates="orders")
+    delivery_zone = db.relationship("DeliveryZone", back_populates="orders")
+    order_status_history = db.relationship("Order_Status_History", back_populates="order")
+    order_items = db.relationship("Order_Item", back_populates="product")
+    payments = db.relationship("Payment", back_populates="order")
+
+    serialize_rules = ("-delivery_zone.orders", "-order.order_status_history", "-product.order_items", "-order.payments", "-user.orders")
 
 class Order_Item(db.Model, SerializerMixin):
     __tablename__ = "order_items"
@@ -122,15 +158,19 @@ class Order_Item(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey("orders.id"))
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
-    service_id = db.Column(db.Integer, db.ForeignKey("services.id"))
     quantity = db.Column(db.Integer, default=1)
     subtotal = db.Column(db.Float, nullable=False)
+
+    product = db.relationship("Order", back_populates="order_items")
+
+    serialize_rules = ("-product.order_items.order",)
 
 class Payment(db.Model, SerializerMixin):
     __tablename__ = "payments"
 
     id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey("orders.id"))
+    order_id = db.Column(db.Integer, db.ForeignKey("orders.id"), nullable=True)
+    appointment_id = db.Column(db.Integer, db.ForeignKey("appointments.id"), nullable=True)
     payment_method = db.Column(db.String, nullable=False)
     #mpeasa specific fields
     checkout_request_id = db.Column(db.String, unique=True, nullable=True)#from daraja API
@@ -141,6 +181,13 @@ class Payment(db.Model, SerializerMixin):
     status = db.Column(db.String, default="Pending")#pending ,success, failed
     payment_date = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
+    order = db.relationship('Order', back_populates="payments")
+    appointment = db.relationship("Appointment", back_populates="payments")
+
+    serialize_rules = ("-payments.order", payments.appointment)
+    @validates("order_id", "appointment_id")
+    def validate_one_input(self, key, value):
+        return value
 class Cart(db.Model, SerializerMixin):
     __tablename__ = "carts"
 
@@ -149,11 +196,22 @@ class Cart(db.Model, SerializerMixin):
     
     cart_items = db.relationship("CartItem", backref="cart", cascade="all, delete-orphan")
 
+    ##association proxy
+    products = association_proxy(
+        "cart_items",
+        "product",
+        creator=lambda productObj: CartItem(product=productObj)
+    )
+
+    serialize_rules = ("-cart_items.cart")
+
 class CartItem(db.Model, SerializerMixin):
     __tablename__ = "cart_items"
 
     id = db.Column(db.Integer, primary_key=True)
     cart_id = db.Column(db.Integer, db.ForeignKey("carts.id"), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=True)
-    service_id = db.Column(db.Integer, db.ForeignKey("services.id"), nullable=True)
     quantity = db.Column(db.Integer, default=1)
+
+    serialize_rules = ("-cart.cart_items")
+
