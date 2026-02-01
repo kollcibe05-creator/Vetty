@@ -66,3 +66,50 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+
+/* Start of styling */
+.item-grid{
+  display: grid;
+  grid-template-columns: repeat(autofill, minmax(280px, 1fr));
+  gap: 25px;
+}
+.card{
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+.card:hover{ transform: translateY(-5px);}
+
+.card img{
+  width: 100%;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.card-info{
+  padding: 12px 4px;
+  
+}
+
+.card-info h3 {
+  font-size: 1.05rem;
+  margin: 0;
+  color: #222;
+  display: flex;
+  justify-content: space-between;
+}
+
+.card-info p {
+  margin: 4px 0;
+  color: #717171;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* .card-info strong{
+  color: #222;
+  font-size: 1rem;
+} */
