@@ -21,3 +21,5 @@ function CategoryFilter ({category_type, onSelectedCategory}) {
     </div>
     )
 }
+
+export default CategoryFilter;
