@@ -153,7 +153,7 @@ class Order(db.Model, SerializerMixin):
     serialize_rules = ("-user.orders", "-order_items.order", "-history.order", "-payment.order",)
 
 
-class Order_Item(db.Model, SerializerMixin):
+class OrderItem(db.Model, SerializerMixin):
     __tablename__ = "order_items"
 
     id = db.Column(db.Integer, primary_key=True)
