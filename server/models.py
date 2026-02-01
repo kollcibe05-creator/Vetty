@@ -126,6 +126,8 @@ class InventoryAlert(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
     threshold = db.Column(db.Integer, nullable=False)
+    
+
 
     product = db.relationship("Product", back_populates="inventory_alerts")
 
@@ -143,14 +145,13 @@ class Order(db.Model, SerializerMixin):
     status = db.Column(db.String, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
+    #relationships
+    order_items = db.relationship("Order_Item", backref="order", cascade="all, delete-orphan")
+    history = db.relationship("OrderStatusHistory", backref="order", cascade="all, delete-orphan")
+    payment = db.relationship("Payment", backref="order", uselist=False)
 
-    user = db.relationship("User", back_populates="orders")
-    delivery_zone = db.relationship("DeliveryZone", back_populates="orders")
-    order_status_history = db.relationship("Order_Status_History", back_populates="order")
-    order_items = db.relationship("Order_Item", back_populates="product")
-    payments = db.relationship("Payment", back_populates="order")
+    serialize_rules = ("-user.orders", "-order_items.order", "-history.order", "-payment.order",)
 
-    serialize_rules = ("-delivery_zone.orders", "-order.order_status_history", "-product.order_items", "-order.payments", "-user.orders")
 
 class Order_Item(db.Model, SerializerMixin):
     __tablename__ = "order_items"
@@ -161,9 +162,15 @@ class Order_Item(db.Model, SerializerMixin):
     quantity = db.Column(db.Integer, default=1)
     subtotal = db.Column(db.Float, nullable=False)
 
-    product = db.relationship("Order", back_populates="order_items")
+    serialize_rules = ("-order.order_items", "-product.order_items", "-service.order_items",)
 
-    serialize_rules = ("-product.order_items.order",)
+    @validates("product_id", "service_id")
+    def validate_product_or_service(self, key, value):
+        if key == "product_id" and self.service_id and value:
+                raise ValueError("OrderItem can have either product or a service, not both")
+        elif key == "service_id" and self.product_id and value:
+                raise ValueError("OrderItem Cannot have both product and a service")
+        return value
 
 class Payment(db.Model, SerializerMixin):
     __tablename__ = "payments"
@@ -181,37 +188,94 @@ class Payment(db.Model, SerializerMixin):
     status = db.Column(db.String, default="Pending")#pending ,success, failed
     payment_date = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
-    order = db.relationship('Order', back_populates="payments")
-    appointment = db.relationship("Appointment", back_populates="payments")
 
-    serialize_rules = ("-payments.order", payments.appointment)
-    @validates("order_id", "appointment_id")
-    def validate_one_input(self, key, value):
-        return value
+    serialize_rules = ("-order.payment",)
+
+    @validates('payment_method')
+    def validate_method(self, key, method):
+        allowed = ['M-Pesa', 'Cash']
+        if method not in allowed:
+            raise ValueError(f"Method must be one of {allowed}")
+        return method
+    
 class Cart(db.Model, SerializerMixin):
     __tablename__ = "carts"
 
+class Role(db.Model):
+    __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
-    
-    cart_items = db.relationship("CartItem", backref="cart", cascade="all, delete-orphan")
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    ##association proxy
-    products = association_proxy(
-        "cart_items",
-        "product",
-        creator=lambda productObj: CartItem(product=productObj)
-    )
+    users = db.relationship('User', backref='role', lazy='dynamic')
 
-    serialize_rules = ("-cart_items.cart")
+    def __repr__(self):
+        return f"<Role '{self.name}'>"
 
-class CartItem(db.Model, SerializerMixin):
-    __tablename__ = "cart_items"
 
+class User(db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+   
+    vetting_status = db.Column(
+        db.String(20),
+        default='not_started',
+        nullable=False
+    )  
+    def set_password(self, password):
+        from flask_bcrypt import Bcrypt
+        bcrypt = Bcrypt()
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    def check_password(self, password):
+        from flask_bcrypt import Bcrypt
+        bcrypt = Bcrypt()
+        return bcrypt.check_password_hash(self.password_hash, password)
+
+    def __repr__(self):
+        return f"<User '{self.username}' - {self.role.name if self.role else 'no role'}>"
     cart_id = db.Column(db.Integer, db.ForeignKey("carts.id"), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=True)
     quantity = db.Column(db.Integer, default=1)
 
-    serialize_rules = ("-cart.cart_items")
+    serialize_rules = ("-cart.cart_items", "-product.cart_items", "-service.cart_items",)
 
+    @validates("quantity")
+    def validate_quantity(self, key, value):
+        if value <= 0:
+            raise ValueError("Quantity must be Greater than zero.")
+        return value
+
+class Appointment(db.Model, SerializerMixin):
+    __tablename__ = "appointments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    service_id = db.Column(db.Integer, db.ForeignKey("services.id"), nullable=False)
+    appointment_date = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String, default="Scheduled")
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+#serializin rules:avoid loops by excluding backrefs
+    serialize_rules = ("-user.appointments", "-service.appointments",)
+
+
+class OrderStatusHistory(db.Model, SerializerMixin):
+    __tablename__ = "order_status_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("orders.id"), nullable=False)
+    status = db.Column(db.String, nullable=False)
+    changed_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+   
+    serialize_rules = ("-order.history",)
