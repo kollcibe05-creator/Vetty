@@ -1,9 +1,13 @@
 
 from flask import request, session, make_response, jsonify
-from flask_sqlalchemy import SQLAlchemy
+
 from flask_restful import Resource
 from config import app, db, api
+
 from datetime import datetime
+
+from models import Product, CartItem, Cart, DeliveryZone, InventoryAlert, Service, Payment, Order, OrderItem, Review
+
 from functools import wraps
 
 def admin_required(f):
