@@ -55,12 +55,10 @@ class Service(db.Model, SerializerMixin):
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"))
 
     reviews = db.relationship("Review", back_populates="service", cascade="all, delete-orphan")
-    user = db.relationship("User", back_populates="services")
     category = db.relationship("Category", back_populates="services")
     appointments = db.relationship("Appointment", back_populates="service", )
-    # cart_items = db.relationship("Cart_Item", back_populates="product")  to be removed
 
-    serialize_rules=( "-reviews.user", "-user.services", "-category.services", "-appointments.service", "-cart_items.product")
+    serialize_rules=( "-reviews.user", "-category.services", "-appointments.service", "-cart_items.product",)
 class Review(db.Model, SerializerMixin):
     __tablename__ = "reviews"
 
@@ -293,9 +291,7 @@ class User(db.Model):
     payments = db.relationship("Payment", back_populates="user")
     orders = db.relationship("Order", back_populates="user")
     reviews = db.relationship("Review", back_populates="user")
-    # services = db.relationship("Service", back_populates="user")
-    # products = db.relationship("Product", back_populates="user")
-    serialize_rules = ("-cart.cart_items", "-product.cart_items", "-service.cart_items","-appointments.user", "-role.users", "-carts.user", "-payments.user", "-reviews.user", "-services.user", "-products.user")
+    serialize_rules = ("-cart.cart_items", "-product.cart_items", "-service.cart_items","-appointments.user", "-role.users", "-carts.user", "-payments.user", "-reviews.user", )
 
     @validates("email")    
     def validate_email(self, key, email):
@@ -318,7 +314,6 @@ class Appointment(db.Model, SerializerMixin):
 
     payments = db.relationship("Payment", back_populates="appointment", cascade="all, delete-orphan")
 
-    #serializin rules:avoid loops by excluding backrefs
     serialize_rules = ("-user.appointments", "-service.appointments","-payments.appointments","-payments.appointment")
 
 
