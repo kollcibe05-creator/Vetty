@@ -1,5 +1,5 @@
 
-from flask import request, session, make_response, jsonify
+from flask import request, session #, make_response, jsonify
 
 from flask_restful import Resource
 from config import app, db, api
@@ -17,7 +17,7 @@ def admin_required(f):
         if not user_id:
             return {"error": "Unauthorized"}, 401
         user = User.query.get(user_id)
-        if not user or user.role.name != "admin":
+        if not user or user.role.name != "Admin":
             return {"error": "Admin access required"}, 403
         return f(*args, **kwargs)
     return decorated_function
@@ -28,27 +28,21 @@ class Signup(Resource):
     def post(self):
         data = request.get_json()
         try:
-            user_role = Role.query.filter_by(name='user').first()
-            if not user_role:
-                return {"error": "Default role not found"}, 500
-
-            new_user = User(
+            ew_user = User(
                 username=data.get('username'),
                 email=data.get('email'),
-                role_id=user_role.id
+                role_id=2
             )
-            new_user.set_password(data.get('password'))
+            new_user.password_hash = data.get('password')  #might be an error
             db.session.add(new_user)
             db.session.commit()
 
             session['user_id'] = new_user.id
 
-            resp = make_response({"message": "User created", "user_id": new_user.id}, 201)
-            resp.set_cookie('user_id', str(new_user.id), httponly=True, max_age=3600*24)
-            return resp
+            return new_user.to_dict(), 201
         except Exception as e:
             db.session.rollback()
-            return {"errors": str(e)}, 422
+            return {"errors": [str(e)]}, 422
 
 
 class Login(Resource):
@@ -57,29 +51,15 @@ class Login(Resource):
         user = User.query.filter_by(username=data.get('username')).first()
         if user and user.check_password(data.get('password')):
             session['user_id'] = user.id
-
-            resp = make_response({
-                "message": "Login successful",
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email,
-                    "role": user.role.name
-                }
-            }, 200)
-
-            resp.set_cookie('user_id', str(user.id), httponly=True, max_age=3600*24)
-            return resp
+            return user.to_dict(), 200
 
         return {"error": "Invalid username or password"}, 401
 
 
 class Logout(Resource):
     def delete(self):
-        session.pop('user_id', None)
-        resp = make_response({}, 204)
-        resp.set_cookie('user_id', '', expires=0)
-        return resp
+        session["user_id"] = None
+        return {}. 204
 
 
 class CheckSession(Resource):
@@ -87,13 +67,8 @@ class CheckSession(Resource):
         user_id = session.get('user_id') or request.cookies.get('user_id')
         if user_id:
             user = User.query.get(user_id)
-            if user:
-                return {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email,
-                    "role": user.role.name
-                }, 200
+            return user.to_dict(), 200
+            
         return {"error": "Not logged in"}, 401
 
 
