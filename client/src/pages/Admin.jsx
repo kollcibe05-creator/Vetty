@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const Admin = () => {
@@ -13,7 +14,7 @@ const Admin = () => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/admin/stats', {
+        const res = await axios.get('http://localhost:5555/admin/stats', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStats(res.data);
@@ -44,10 +45,10 @@ const Admin = () => {
           <p>Total admins: {stats.total_admins}</p>
           <p>Last updated: {new Date(stats.timestamp).toLocaleString()}</p>
         </div>
-     )}
+      )}
 
       <div>
-        <h2>Management</h2>
+        <h3>Management</h3>
         <ul>
           <li><Link to="/admin/users">Manage Users</Link></li>
           <li><Link to="/admin/products">Manage Products</Link></li>
