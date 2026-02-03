@@ -16,7 +16,7 @@ class Product(db.Model, SerializerMixin):
     image_url = db.Column(db.String)
     price = db.Column(db.Integer)
     stock_quantity = db.Column(db.Integer)
-    category_id = db.Column(db.Integer, db.ForeignKey("categories.id"))
+    category_id = db.Column(db.Integer, db.ForeignKey("categories.id"))  # Link to category
 
     reviews = db.relationship("Review", back_populates="product", cascade="all, delete-orphan")
     category = db.relationship("Category", back_populates="products")
@@ -51,7 +51,7 @@ class Service(db.Model, SerializerMixin):
     description = db.Column(db.Text)
     image_url = db.Column(db.String)
     base_price = db.Column(db.Integer)
-    category_id = db.Column(db.Integer, db.ForeignKey("categories.id"))
+    category_id = db.Column(db.Integer, db.ForeignKey("categories.id"))  # Link to category
 
     reviews = db.relationship("Review", back_populates="service", cascade="all, delete-orphan")
     category = db.relationship("Category", back_populates="services")
@@ -111,18 +111,20 @@ class Category(db.Model, SerializerMixin):
         return value
     
 
+# Admin: delivery zones for Vetty orders
 class DeliveryZone(db.Model, SerializerMixin):
     __tablename__ = "delivery_zones"
 
     id = db.Column(db.Integer, primary_key=True)
-    zone_name = db.Column(db.String, nullable=False)
-    delivery_fee = db.Column(db.Integer, nullable=False)
+    zone_name = db.Column(db.String, nullable=False)  # Zone name
+    delivery_fee = db.Column(db.Integer, nullable=False)  # Fee per zone
 
     orders = db.relationship("Order", back_populates="delivery_zone")
 
     serialize_rules = ("-orders.delivery_zone",)
 
 
+# Admin: inventory alerts for low-stock items
 class InventoryAlert(db.Model, SerializerMixin):
     __tablename__ = "inventory_alerts"
 
