@@ -314,8 +314,8 @@ class User(db.Model, SerializerMixin):
     def check_password(self, password):
         return bcrypt.check_password_hash(self._password_hash, password.encode("utf-8"))
     
-    appointments = db.relationship("Appointment", backref="user", cascade="all, delete-orphan")
-    carts = db.relationship("Cart", back_populates="user")
+    appointments = db.relationship("Appointment", back_populates="user", cascade="all, delete-orphan")
+    carts = db.relationship("Cart", back_populates="user", uselist=False)  #added uselist
     payments = db.relationship("Payment", back_populates="user")
     orders = db.relationship("Order", back_populates="user")
     reviews = db.relationship("Review", back_populates="user")
@@ -344,7 +344,7 @@ class Appointment(db.Model, SerializerMixin):
     notes = db.Column(db.Text)
     total_price = db.Column(db.Integer)
 
-
+    user = db.relationship("User", back_populates="appointments")
     payments = db.relationship("Payment", back_populates="appointment", cascade="all, delete-orphan")
 
     serialize_rules = ("-user.appointments", "-service.appointments","-payments.appointment")
