@@ -9,7 +9,6 @@ const Login = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const { loading, error, isAuthenticated } = useSelector((state) => state.auth);
 
   const handleSubmit = (e) => {
