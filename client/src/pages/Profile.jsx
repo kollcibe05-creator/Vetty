@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchProfile } from '../features/auth/authSlice';
+import { fetchProfile } from '../features/authSlice';
 import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {

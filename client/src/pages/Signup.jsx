@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { signup } from '../features/auth/authSlice';
+import { signup } from '../features/authSlice';
 import { useNavigate } from 'react-router-dom'; 
 
 const Signup = () => {
@@ -38,6 +38,15 @@ const Signup = () => {
                     />
                 </div>
                 <div>
+                    <label>Email:</label>
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                </div>
+                <div>
                     <label>Password:</label>
                     <input
                         type="password"
@@ -47,9 +56,9 @@ const Signup = () => {
                     />
                 </div>
 
-                <buton type="submit" disabled={loading}>
+                <button type="submit" disabled={loading}>
                     {loading ? 'Signing up...' : 'Sign Up'}
-                </buton>
+                </button>
             </form>
             <p>
                 Already have an account? <a href="/login">Log in</a>
