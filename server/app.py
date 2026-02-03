@@ -383,8 +383,20 @@ class Checkout(Resource):
 
                 if product.stock_quantity < item.quantity:
                     db.session.rollback()
-                    return {"error": "Insufficient stock for {product.name}"}, 400
+                    return {"error": f"Insufficient stock for {product.name}"}, 400
                 product.stock_quantity -= item.quantity
+                if product.stock_quantity <= 5:
+                    #checks if it already exists to avoid duplication
+                    existing_alert = InventoryAlert.query.filter_by(product_id=product.id).first()
+                    if not existing_alert:
+                        new_alert = InventoryAlert(
+                            product_id=product.id,
+                            alert_threshold=5,
+                            current_stock=product.stock_quantity,
+                            is_resolved=False
+                        )
+                        db.session.add(new_alert)
+
                 order_item = OrderItem(
                     order=new_order,
                     product_id=product.id,
@@ -405,6 +417,65 @@ class Checkout(Resource):
             db.session.rollback()
             return {"error": str(e)}, 422
 
+class OrderStatusHistoryResource(Resource):
+    def get(self, order_id):
+        history = OrderStatusHistory.query.filter_by(order_id=order_id).all()
+        return [h.to_dict() for h in history], 200
+    @admin_required
+    def post(self):
+        data = request.get_json()
+        order_id = data.get("order_id")
+        new_status = data.get("status")
+
+        order = db.session.get(Order, order_id)
+        if not order:
+          return {"error": "Order not found"}, 404  
+
+        #update the main order  
+        order.status = new_status
+
+        history = OrderStatusHistory(
+            order_id=order_id,
+            status=new_status,
+            changed_at=datetime.utcnow()
+        )
+        db.session.add(history)
+        db.session.commit()
+        return history.to_dict(), 201
+
+
+class InventoryAlertList(Resource):
+    @admin_required
+    def get(self):
+        alerts = InventoryAlert.query.all()
+        return [alert.to_dict() for alert in alerts]         
+
+    @admin_required
+    def delete(self, alert_id):
+        alert = db.session.get(InventoryAlert, alert_id)    
+        if alert:
+            db.session.delete(alert)
+            db.session.commit()
+            return {}, 204
+        return {"error": "Alert not found"}, 204    
+    
+
+# class DashboardSummary(Resource):
+#     @admin_required
+#     def get(self):
+#         # Calculate total revenue from completed payments
+#         total_revenue = db.session.query(db.func.sum(Payment.amount)).filter(Payment.status == 'Completed').scalar() or 0
+        
+#         # Gather counts for the admin notification badges
+#         summary = {
+#             "revenue": float(total_revenue),
+#             "pending_orders": Order.query.filter_by(status='Pending').count(),
+#             "low_stock_alerts": InventoryAlert.query.filter_by(is_resolved=False).count(),
+#             "upcoming_appointments": Appointment.query.filter(Appointment.appointment_date >= datetime.now()).count()
+#         }
+        
+#         return summary, 200
+
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
 api.add_resource(Logout, '/logout')
@@ -421,7 +492,9 @@ api.add_resource(CartItemList, '/cart-items')
 api.add_resource(PaymentList, '/payments')
 api.add_resource(OrderList, "/orders")
 api.add_resource(Checkout, "/check-out")
+api.add_resource(OrderStatusHistoryResource, "/order-history", "/order-history/<int:order_id>")
 
+api.add_resource(InventoryAlertList, "/alerts", "/alerts/<int:alert_id>")
 
 
 if __name__ == "__main__":
