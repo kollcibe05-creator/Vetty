@@ -6,7 +6,11 @@ from config import app, db, api
 
 from datetime import datetime
 
-from models import Product, CartItem, Cart, DeliveryZone, InventoryAlert, Service, Payment, Order, OrderItem, Review
+from models import (Product, CartItem, Cart, DeliveryZone, 
+        InventoryAlert, Service, Payment, Order, 
+        OrderItem, Review, User, Role, OrderStatusHistory,
+         Appointment, Category
+    )
 
 from functools import wraps
 
@@ -153,7 +157,7 @@ class ServiceList(Resource):
         )
         db.session.add(new_service)
         db.session.commit()
-        return  new_service.id.to_dict(), 201
+        return  new_service.to_dict(), 201
 
 
 
@@ -192,8 +196,11 @@ class ReviewList(Resource):
         if not user_id:
             return {"error": "Unauthorized"}, 401
 
-        if (product_id and service_id) or (not service_id and not service_id):
+        
+        if bool(product_id) == bool(service_id):
             return {"error": "Review must target exactly one product or service"}, 400
+        # if (product_id and service_id) or (not product_id and not service_id):
+        #     return {"error": "Review must target exactly one product or service"}, 400
 
         new_review = Review(
             user_id=user_id,
@@ -204,7 +211,7 @@ class ReviewList(Resource):
         )
         db.session.add(new_review)
         db.session.commit()
-        return new_review.to_dict, 201
+        return new_review.to_dict(), 201
 
 
 
@@ -217,19 +224,19 @@ class AppointmentList(Resource):
             return {"error": "Unauthorized"}, 401
 
         appointment_date = datetime.fromisoformat(data.get("appointment_date"))
-        if appointment_date < datetime.now()
+        if appointment_date < datetime.now():
             return {"error": "Appointment date cannot be in the past"}, 400
         new_appointment = Appointment(
             user_id=user_id,
             service_id=data.get('service_id'),
             appointment_date=appointment_date,
-            notes=data.get("notes")
+            notes=data.get("notes"),
             total_price=data.get('total_price'),
             payment_status=data.get('payment_status', 'pending')
         )
         db.session.add(new_appointment)
         db.session.commit()
-        return new_appointment.to_dict, 201
+        return new_appointment.to_dict(), 201
 
 
 
@@ -251,7 +258,7 @@ class CartItemList(Resource):
         user_id = session.get("user_id")
         if not user_id:
             return {"error": "Unauthorized"}, 401
-        cart = Cart.query.filter_by(user_id).first()
+        cart = Cart.query.filter_by(user_id=user_id).first()
         return [item.to_dict() for item in cart.cart_items] if cart else [], 200
     def post(self):
         data = request.get_json()
@@ -277,7 +284,7 @@ class CartItemList(Resource):
                 cart_id=cart.id,
                 product_id=product.id,
                 quantity=data.get('quantity', 1)
-            db.session.add(new_item)
+            db.session.add(item)
             db.session.commit()
             )
                 
@@ -353,7 +360,7 @@ class OrderList(Resource):
                     order=new_order,
                     product_id=product.id,
                     quantity=item["quantity"],
-                    unit_price=product.unit_price
+                    unit_price=product.price
                 )
                 db.session.add(order_item)
             db.session.add(new_order)
@@ -361,8 +368,42 @@ class OrderList(Resource):
             return new_order.to_dict()
         except Exception as e:
             return {"error": str(e)}, 422
+class Checkout(Resource):
+    def post(self):
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+        cart = Cart.query.filter_by(user_id=user_id).first()
+        if not cart or not cart.cart_items:
+            return {"error": "Cart is empty"}, 400
+        try:
+            new_order = Order(user_id=user_id, status="Pending")
+            for item in cart.cart_items:
+                product = item.product
 
+                if product.stock_quantity < item.quantity:
+                    db.session.rollback()
+                    return {"error": "Insufficient stock for {product.name}"}, 400
+                product.stock_quantity -= item.quantity
+                order_item = OrderItem(
+                    order=new_order,
+                    product_id=product.id,
+                    quantity=item.quantity,
+                    unit_price=product.price
+                )
+                db.session.add(order_item)
 
+            # 3. Clear the cart after successful order creation
+            CartItem.query.filter_by(cart_id=cart.id).delete()
+            
+            db.session.add(new_order)
+            db.session.commit()
+            
+            return new_order.to_dict(), 201
+            
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 422
 
 api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
@@ -379,6 +420,7 @@ api.add_resource(CartList, '/carts')
 api.add_resource(CartItemList, '/cart-items')
 api.add_resource(PaymentList, '/payments')
 api.add_resource(OrderList, "/orders")
+api.add_resource(Checkout, "/check-out")
 
 
 
