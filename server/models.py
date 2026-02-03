@@ -1,9 +1,8 @@
-from sqlalchemy import true
 from sqlalchemy.orm import validates
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.sql import func
-from sqlalchemy.ext.associationproxy import association_proxy
+# from sqlalchemy.ext.associationproxy import association_proxy
 
 from config import db, bcrypt
 
@@ -21,9 +20,9 @@ class Product(db.Model, SerializerMixin):
 
     reviews = db.relationship("Review", back_populates="product", cascade="all, delete-orphan")
     category = db.relationship("Category", back_populates="products")
-    inventory_alerts = db.relationship("InventoryAlert", back_populates="product", cascade="all, delete-orphan")
+    inventory_alert = db.relationship("InventoryAlert", back_populates="product", uselist=False, cascade="all, delete-orphan")
     cart_items = db.relationship("CartItem", back_populates="product", cascade="all, delete-orphan")
-    order_items = db.relationship("Order_Item", back_populates="product", cascade="all, delete-orphan")
+    order_items = db.relationship("OrderItem", back_populates="product", cascade="all, delete-orphan")
     
     # #association_proxy#############################
     # inventory_alert_obj = db.relationship("InventoryAlert", back_populates="product", cascade="all, delete-orphan", useList=False)
@@ -41,7 +40,7 @@ class Product(db.Model, SerializerMixin):
 
 
 
-    serialize_rules = ("-reviews.product", "categories.products", "-inventory_alerts.product", "-cart_items.product", "order_items.product",)  #"-inventory_alert_obj", "-category_name", "threshold"
+    serialize_rules = ("-reviews.product", "-category.products", "-inventory_alert.product", "-cart_items.product", "-order_items.product",)  #"-inventory_alert_obj", "-category_name", "threshold"
 
 
 class Service(db.Model, SerializerMixin):
@@ -55,11 +54,10 @@ class Service(db.Model, SerializerMixin):
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"))
 
     reviews = db.relationship("Review", back_populates="service", cascade="all, delete-orphan")
-    user = db.relationship("User", back_populates="services")
     category = db.relationship("Category", back_populates="services")
     appointments = db.relationship("Appointment", back_populates="service", )
 
-    serialize_rules=( "-reviews.user", "-user.services", "-category.services", "-appointments.service",)
+    serialize_rules=( "-reviews.user", "-category.services", "-appointments.service",)
 class Review(db.Model, SerializerMixin):
     __tablename__ = "reviews"
 
@@ -85,8 +83,13 @@ class Review(db.Model, SerializerMixin):
             raise ValueError("Rating must be between 1 and 5")
         return value
     @validates("product_id", "service_id") 
-    def validate_return_value_of_the_two(self, key, value ):
-        return value
+    def validate_target(self,key, value):
+        if not (self.product_id or self.service_id):
+            raise ValueError("Review must belong to a product or service")
+        if self.product_id and self.service_id:
+            raise ValueError("Review cannot belong to both")
+        return value        
+
 
 
 class Category(db.Model, SerializerMixin):
@@ -124,13 +127,15 @@ class InventoryAlert(db.Model, SerializerMixin):
     __tablename__ = "inventory_alerts"
 
     id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), unique=True)
     threshold = db.Column(db.Integer, nullable=False)
+    
 
-    product = db.relationship("Product", back_populates="inventory_alerts")
+
+    product = db.relationship("Product", back_populates="inventory_alert")
 
 
-    serialize_rules = ("inventory_alerts.product")
+    serialize_rules = ("-product.inventory_alert",)
 
 
 class Order(db.Model, SerializerMixin):
@@ -139,55 +144,80 @@ class Order(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     delivery_zone_id = db.Column(db.Integer, db.ForeignKey("delivery_zones.id"))
-    total_amount = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    #total amount calculates as a hybrid property
 
     #relationships
-    order_items = db.relationship("Order_Item", backref="order", cascade="all, delete-orphan")
-    history = db.relationship("OrderStatusHistory", backref="order", cascade="all, delete-orphan")
-    payment = db.relationship("Payment", backref="order", uselist=False)
+    user = db.relationship("User", back_populates="orders")
+    order_items = db.relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")   
+    history = db.relationship("OrderStatusHistory", back_populates="order", cascade="all, delete-orphan")
+    payments = db.relationship("Payment", back_populates="order")
 
-    serialize_rules = ("-user.orders", "-order_items.order", "-history.order", "-payment.order",)
+    delivery_zone = db.relationship("DeliveryZone", back_populates="orders")
+    
+
+    serialize_rules = ("total_amount", "-user.orders", "-order_items.order", "-history.order", "-payments.order", "-delivery_zone.orders", "-order_items.product.order_items",)
+
+    @validates("status")
+    def validate_status(self, key,value):
+        if value not in ["Pending", "Approved", "Out for Delivery", "Delivered"]:
+            raise ValueError("Invalid entry")
+        return value 
+    @hybrid_property
+    def total_amount(self):
+        return sum(item.subtotal for item in self.order_items)
 
 
-class Order_Item(db.Model, SerializerMixin):
+
+class OrderItem(db.Model, SerializerMixin):
     __tablename__ = "order_items"
 
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey("orders.id"))
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
     quantity = db.Column(db.Integer, default=1)
-    subtotal = db.Column(db.Float, nullable=False)
+    unit_price = db.Column(db.Integer, nullable=False) 
 
-    serialize_rules = ("-order.order_items", "-product.order_items", "-service.order_items",)
+    order = db.relationship("Order", back_populates="order_items")
+    product = db.relationship("Product", back_populates="order_items")
 
-    @validates("product_id", "service_id")
-    def validate_product_or_service(self, key, value):
-        if key == "product_id" and self.service_id and value:
-                raise ValueError("OrderItem can have either product or a service, not both")
-        elif key == "service_id" and self.product_id and value:
-                raise ValueError("OrderItem Cannot have both product and a service")
-        return value
+    serialize_rules = ("subtotal", "-order.order_items", "-product.order_items",)
+
+
+    @hybrid_property
+    def subtotal(self):
+        return self.quantity * self.unit_price
+
 
 class Payment(db.Model, SerializerMixin):
     __tablename__ = "payments"
 
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     order_id = db.Column(db.Integer, db.ForeignKey("orders.id"), nullable=True)
     appointment_id = db.Column(db.Integer, db.ForeignKey("appointments.id"), nullable=True)
     payment_method = db.Column(db.String, nullable=False)
+
+    
     #mpeasa specific fields
     checkout_request_id = db.Column(db.String, unique=True, nullable=True)#from daraja API
     merchant_request_id = db.Column(db.String, nullable=True)
     phone_number = db.Column(db.String, nullable=True)#the number that payed
-    amount = db.Column(db.Float, nullable=False)
-    mpesa_receipt_number = db.Column(db.String, unique=True, nullable=True)#recieved from callbak
-    status = db.Column(db.String, default="Pending")#pending ,success, failed
-    payment_date = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    amount = db.Column(db.Integer, nullable=False)
+    # amount = db.Column(db.Float, nullable=False)
+    mpesa_receipt_number = db.Column(db.String, unique=True, nullable=True)#recieved from callbak    #transaction_reference
+    status = db.Column(db.String, default="pending")#pending ,success, failed
+    paid_at = db.Column(db.DateTime(timezone=True), server_default=func.now()) #paid at
 
 
-    serialize_rules = ("-order.payment",)
+    appointment = db.relationship("Appointment", back_populates="payments")
+    order = db.relationship("Order", back_populates="payments")
+    user = db.relationship("User", back_populates="payments")
+
+
+    serialize_rules = ("-order.payments", "-appointment.payments", "-user.payments")
+
 
     @validates('payment_method')
     def validate_method(self, key, method):
@@ -195,39 +225,112 @@ class Payment(db.Model, SerializerMixin):
         if method not in allowed:
             raise ValueError(f"Method must be one of {allowed}")
         return method
+    @validates("order_id", "appointment_id")
+    def validate_target(self, key, value):
+        if not (self.order_id or self.appointment_id):
+            raise ValueError("Payment can be of order or appointment")    
+        if (self.order_id and self.appointment_id):
+            raise ValueError("Payment can be either of Order,or appointment not both")    
+        return value    
+    @validates("status")
+    def validate_payment_status(self, key, value):
+        if value not in ["pending", "success", "fail"]:
+            raise ValueError("invalid entry!")
+        return value    
     
 class Cart(db.Model, SerializerMixin):
     __tablename__ = "carts"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True)
+    created_at = db.Column(db.DateTime, server_default=func.now())
     
-    cart_items = db.relationship("CartItem", backref="cart", cascade="all, delete-orphan")
+    cart_items = db.relationship("CartItem", back_populates="cart", cascade="all, delete-orphan")
+    user = db.relationship("User", back_populates="carts")
 
-    ##association proxy
-    products = association_proxy(
-        "cart_items",
-        "product",
-        creator=lambda productObj: CartItem(product=productObj)
-    )
+    serialize_rules = ("-cart_items.cart", "-user.carts")
 
-    serialize_rules = ("-cart_items.cart")
+
 
 class CartItem(db.Model, SerializerMixin):
     __tablename__ = "cart_items"
 
     id = db.Column(db.Integer, primary_key=True)
-    cart_id = db.Column(db.Integer, db.ForeignKey("carts.id"), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=True)
-    quantity = db.Column(db.Integer, default=1)
+    cart_id = db.Column(db.Integer, db.ForeignKey("carts.id"))
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"))
+    quantity = db.Column(db.Integer, nullable=False, default=1)
 
-    serialize_rules = ("-cart.cart_items", "-product.cart_items", "-service.cart_items",)
+    __table_args__ = (
+        db.UniqueConstraint("cart_id", "product_id", name="uix_cart_product")
+    )
 
+    product = db.relationship("Product", back_populates="cart_items")
+    cart  = db.relationship("Cart", back_populates="cart_items")
+
+
+    serialize_rules = ("-product.cart_items", "-cart.cart_items")
     @validates("quantity")
     def validate_quantity(self, key, value):
-        if value <= 0:
-            raise ValueError("Quantity must be Greater than zero.")
-        return value
+        if value < 1:
+            raise ValueError("Quantity must be >=1")
+        return value    
+class Role(db.Model, SerializerMixin):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    users = db.relationship('User', back_populates="role")
+
+    serialize_rules = ('-users.role',)
+
+    def __repr__(self):
+        return f"<Role {self.id} {self.name}>"
+
+
+
+class User(db.Model, SerializerMixin):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    _password_hash = db.Column(db.String(255), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    @property
+    def password(self):
+        raise AttributeError("Password is write-only") 
+
+    @password.setter
+    def password(self, password):
+        self._password_hash = bcrypt.generate_password_hash(
+            password.encode("utf-8")
+        ).decode("utf-8")    
+
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self._password_hash, password.encode("utf-8"))
+    
+    appointments = db.relationship("Appointment", back_populates="user", cascade="all, delete-orphan")
+    carts = db.relationship("Cart", back_populates="user", uselist=False)  #added uselist
+    payments = db.relationship("Payment", back_populates="user")
+    orders = db.relationship("Order", back_populates="user")
+    reviews = db.relationship("Review", back_populates="user")
+    role = db.relationship("Role", back_populates="users")
+
+    serialize_rules = ("-_password_hash","-orders.user", "-appointments.user", "-role.users", "-carts.user", "-payments.user", "-reviews.user", "-orders",)
+
+    @validates("email")    
+    def validate_email(self, key, email):
+        if "@" not  in email:
+            raise ValueError("Invalid email!")
+        return email    
+
+    def __repr__(self):
+        return f"<User '{self.username}' - {self.role.name if self.role else 'no role'}>"
 
 class Appointment(db.Model, SerializerMixin):
     __tablename__ = "appointments"
@@ -236,12 +339,20 @@ class Appointment(db.Model, SerializerMixin):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     service_id = db.Column(db.Integer, db.ForeignKey("services.id"), nullable=False)
     appointment_date = db.Column(db.DateTime, nullable=False)
-    status = db.Column(db.String, default="Scheduled")
-    notes = db.Column(db.Text)
+    payment_status = db.Column(db.String, default="Scheduled")
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    notes = db.Column(db.Text)
+    total_price = db.Column(db.Integer)
 
-#serializin rules:avoid loops by excluding backrefs
-    serialize_rules = ("-user.appointments", "-service.appointments",)
+    user = db.relationship("User", back_populates="appointments")
+    payments = db.relationship("Payment", back_populates="appointment", cascade="all, delete-orphan")
+
+    serialize_rules = ("-user.appointments", "-service.appointments","-payments.appointment")
+    @validates("payment_status")
+    def validate_status(self, key,value):
+        if value not in ["Pending", "Approved", "Scheduled", "Completed", "Cancelled", "No-Show"]:
+            raise ValueError("Invalid entry")
+        return value 
 
 
 class OrderStatusHistory(db.Model, SerializerMixin):
@@ -252,4 +363,6 @@ class OrderStatusHistory(db.Model, SerializerMixin):
     status = db.Column(db.String, nullable=False)
     changed_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
    
+
+    order = db.relationship("Order", back_populates="history")
     serialize_rules = ("-order.history",)
