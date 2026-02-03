@@ -1,6 +1,7 @@
 
 import { createBrowserRouter, Outlet } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+import { Navigate } from 'react-router-dom';
 
 
 import Login from './pages/Login';
