@@ -44,9 +44,21 @@ const Admin = () => {
           <p>Total admins: {stats.total_admins}</p>
           <p>Last updated: {new Date(stats.timestamp).toLocaleString()}</p>
         </div>
-      )}
+     )}
 
-      <p>More features (users list, products, orders, etc.) can be added here.</p>
+      <div>
+        <h2>Management</h2>
+        <ul>
+          <li><Link to="/admin/users">Manage Users</Link></li>
+          <li><Link to="/admin/products">Manage Products</Link></li>
+          <li><Link to="/admin/services">Manage Services</Link></li>
+          <li><Link to="/admin/orders">View Orders</Link></li>
+          <li><Link to="/admin/appointments">View Appointments</Link></li>
+          <li><Link to="/admin/reviews">Manage Reviews</Link></li>
+          <li><Link to="/admin/categories">Manage Categories</Link></li>
+          <li><Link to="/admin/delivery-zones">Manage Delivery Zones</Link></li>
+        </ul>
+      </div>
     </div>
   );
 };
