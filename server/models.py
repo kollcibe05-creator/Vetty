@@ -40,7 +40,7 @@ class Product(db.Model, SerializerMixin):
 
 
 
-    serialize_rules = ("-reviews.product", "-category.products", "-inventory_alert.product", "-cart_items.product", "-order_items.product",)  #"-inventory_alert_obj", "-category_name", "threshold"
+    serialize_rules = ("-reviews.product", "-category.products", "-inventory_alert.product", "-cart_items.product", "-order_items.product", "-reviews", "-cart_items", "-order_items" )  #"-inventory_alert_obj", "-category_name", "threshold"
 
 
 class Service(db.Model, SerializerMixin):
@@ -57,7 +57,7 @@ class Service(db.Model, SerializerMixin):
     category = db.relationship("Category", back_populates="services")
     appointments = db.relationship("Appointment", back_populates="service", )
 
-    serialize_rules=( "-reviews.user", "-category.services", "-appointments.service",)
+    serialize_rules=( "-reviews", "-category.services", "-appointments",)
 class Review(db.Model, SerializerMixin):
     __tablename__ = "reviews"
 
@@ -75,7 +75,7 @@ class Review(db.Model, SerializerMixin):
 
     service = db.relationship("Service", back_populates="reviews")
 
-    serialize_rules = ("-user.reviews", "-product.reviews", "-service.reviews", )
+    serialize_rules = ("-user", "-product", "-service", )
     
     # @validates("rating")
     # def validate_rating(self, key,value):
@@ -104,7 +104,7 @@ class Category(db.Model, SerializerMixin):
     products = db.relationship("Product", back_populates="category")
     services = db.relationship("Service", back_populates="category")
 
-    serialize_rules = ("-products.category", "-services.category",)
+    serialize_rules = ("-products", "-services",)
 
     @validates("category_type")
     def validate_category(self,key,value):
@@ -161,7 +161,7 @@ class Order(db.Model, SerializerMixin):
     delivery_zone = db.relationship("DeliveryZone", back_populates="orders")
     
 
-    serialize_rules = ("total_amount", "-user.orders", "-order_items.order", "-history.order", "-payments.order", "-delivery_zone.orders", "-order_items.product.order_items",)
+    serialize_rules = ("total_amount", "-user.orders", "-order_items.order", "-history.order", "-payments.order", "-delivery_zone.orders", )
 
     @validates("status")
     def validate_status(self, key,value):
@@ -186,7 +186,8 @@ class OrderItem(db.Model, SerializerMixin):
     order = db.relationship("Order", back_populates="order_items")
     product = db.relationship("Product", back_populates="order_items")
 
-    serialize_rules = ("subtotal", "-order.order_items", "-product.order_items",)
+    # serialize_rules = ("subtotal", "-order.order_items", "-product.order_items",)
+    serialize_rules = ("subtotal", "-order", "-product",)
 
 
     @hybrid_property
@@ -328,7 +329,7 @@ class User(db.Model, SerializerMixin):
     reviews = db.relationship("Review", back_populates="user")
     role = db.relationship("Role", back_populates="users")
 
-    serialize_rules = ("-_password_hash","-orders.user", "-appointments.user", "-role.users", "-carts.user", "-payments.user", "-reviews.user", "-orders",)
+    serialize_rules = ("-_password_hash","-orders.user", "-appointments", "-role.users", "-carts.user", "-payments.user", "-reviews.user",)
 
     @validates("email")    
     def validate_email(self, key, email):
