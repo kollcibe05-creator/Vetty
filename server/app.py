@@ -284,9 +284,10 @@ class CartItemList(Resource):
                 cart_id=cart.id,
                 product_id=product.id,
                 quantity=data.get('quantity', 1)
+            )
             db.session.add(item)
             db.session.commit()
-            )
+            
                 
 
         return item.to_dict(), 201
