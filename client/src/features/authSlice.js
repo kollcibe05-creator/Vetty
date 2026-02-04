@@ -20,11 +20,12 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${API_URL}/login`, credentials);
-      localStorage.setItem('token', res.data.access_token);
-      return res.data.user;
+      const res = await axios.post(`${API_URL}/login`, credentials, {
+        withCredentials: true // Important for session cookies
+      });
+      return res.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.msg || 'Login failed');
+      return rejectWithValue(err.response?.data?.error || 'Login failed');
     }
   }
 );
@@ -33,15 +34,12 @@ export const fetchProfile = createAsyncThunk(
   'auth/fetchProfile',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No token');
-      const res = await axios.get(`${API_URL}/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await axios.get(`${API_URL}/check_session`, {
+        withCredentials: true // Important for session cookies
       });
       return res.data;
     } catch (err) {
-      localStorage.removeItem('token');
-      return rejectWithValue(err.response?.data?.msg || 'Session expired');
+      return rejectWithValue(err.response?.data?.error || 'Session expired');
     }
   }
 );
@@ -56,7 +54,6 @@ const authSlice = createSlice({
   },
   reducers: {
     logout: (state) => {
-      localStorage.removeItem('token');
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
