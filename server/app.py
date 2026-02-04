@@ -11,6 +11,7 @@ from models import (Product, CartItem, Cart, DeliveryZone,
         OrderItem, Review, User, Role, OrderStatusHistory,
          Appointment, Category
     )
+from order_status_endpoints import OrderStatus, OrderStatusHistoryList
 
 from functools import wraps
 
@@ -295,6 +296,118 @@ class CartItemList(Resource):
 
 
 
+class MpesaPayment(Resource):
+    def post(self):
+        data = request.get_json()
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+
+        # Validate phone number format
+        phone_number = data.get('phone_number')
+        if not phone_number or not phone_number.startswith('2547') or len(phone_number) != 12:
+            return {"error": "Invalid M-Pesa phone number format. Use 2547XXXXXXXX"}, 400
+
+        # Create payment record
+        try:
+            payment = Payment(
+                user_id=user_id,
+                order_id=data.get('order_id'),
+                appointment_id=data.get('appointment_id'),
+                payment_method='M-Pesa',
+                phone_number=phone_number,
+                amount=data.get('amount'),
+                status='pending',
+                checkout_request_id=f"CHK_{datetime.now().strftime('%Y%m%d%H%M%S')}_{user_id}"
+            )
+            db.session.add(payment)
+            db.session.commit()
+
+            # Here you would integrate with actual M-Pesa API
+            # For now, we'll simulate the payment initiation
+            return {
+                "message": "M-Pesa payment initiated successfully",
+                "payment_id": payment.id,
+                "checkout_request_id": payment.checkout_request_id,
+                "phone_number": phone_number,
+                "amount": payment.amount
+            }, 201
+
+        except Exception as e:
+            db.session.rollback()
+            return {"error": f"Payment initiation failed: {str(e)}"}, 500
+
+class Cart(Resource):
+    def get(self):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+
+        cart = Cart.query.filter_by(user_id=user_id).first()
+        if not cart:
+            return {"cart_items": [], "total_amount": 0}, 200
+
+        cart_data = cart.to_dict()
+        total_amount = sum(item.quantity * item.product.price for item in cart.cart_items)
+        
+        return {
+            "cart_items": [item.to_dict() for item in cart.cart_items],
+            "total_amount": total_amount
+        }, 200
+
+    def delete(self):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+
+        cart = Cart.query.filter_by(user_id=user_id).first()
+        if cart:
+            CartItem.query.filter_by(cart_id=cart.id).delete()
+            db.session.commit()
+        
+        return {"message": "Cart cleared"}, 200
+
+class CartItem(Resource):
+    def patch(self, cart_item_id):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+
+        cart_item = CartItem.query.get(cart_item_id)
+        if not cart_item or cart_item.cart.user_id != user_id:
+            return {"error": "Cart item not found"}, 404
+
+        data = request.get_json()
+        new_quantity = data.get('quantity')
+        
+        if new_quantity and new_quantity > 0:
+            if new_quantity > cart_item.product.stock_quantity:
+                return {"error": "Insufficient stock"}, 400
+            cart_item.quantity = new_quantity
+            db.session.commit()
+
+        cart = cart_item.cart
+        total_amount = sum(item.quantity * item.product.price for item in cart.cart_items)
+        
+        return {
+            "cart_items": [item.to_dict() for item in cart.cart_items],
+            "total_amount": total_amount
+        }, 200
+
+    def delete(self, cart_item_id):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+
+        cart_item = CartItem.query.get(cart_item_id)
+        if not cart_item or cart_item.cart.user_id != user_id:
+            return {"error": "Cart item not found"}, 404
+
+        db.session.delete(cart_item)
+        db.session.commit()
+        
+        return {"message": "Item removed from cart"}, 200
+
 class PaymentList(Resource):
     def post(self):
         data = request.get_json()
@@ -351,6 +464,14 @@ class OrderList(Resource):
 
         try:
             new_order = Order(user_id=user_id, status="Pending")
+            
+            # Create initial status history entry
+            status_history = OrderStatusHistory(
+                order=new_order,
+                status="Pending"
+            )
+            db.session.add(status_history)
+            
             for item in items:
                 product = Product.query.get(item["product_id"])
                 if not product or product.stock_quantity < item["quantity"]:
@@ -379,6 +500,14 @@ class Checkout(Resource):
             return {"error": "Cart is empty"}, 400
         try:
             new_order = Order(user_id=user_id, status="Pending")
+            
+            # Create initial status history entry
+            status_history = OrderStatusHistory(
+                order=new_order,
+                status="Pending"
+            )
+            db.session.add(status_history)
+            
             for item in cart.cart_items:
                 product = item.product
 
@@ -490,10 +619,14 @@ api.add_resource(ReviewList, '/reviews')
 api.add_resource(AppointmentList, '/appointments')
 api.add_resource(CartList, '/carts')
 api.add_resource(CartItemList, '/cart-items')
+api.add_resource(Cart, '/cart')
+api.add_resource(CartItem, '/cart/<int:cart_item_id>')
 api.add_resource(PaymentList, '/payments')
+api.add_resource(MpesaPayment, '/payments/mpesa')
 api.add_resource(OrderList, "/orders")
 api.add_resource(Checkout, "/check-out")
-api.add_resource(OrderStatusHistoryResource, "/order-history", "/order-history/<int:order_id>")
+api.add_resource(OrderStatus, "/orders/<int:order_id>/status")
+api.add_resource(OrderStatusHistoryList, "/orders/<int:order_id>/history")
 
 api.add_resource(InventoryAlertList, "/alerts", "/alerts/<int:alert_id>")
 

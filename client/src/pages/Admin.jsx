@@ -13,11 +13,10 @@ const Admin = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5555/admin/stats', {
-          headers: { Authorization: `Bearer ${token}` }
+        const res = await axios.get('http://localhost:5000/users', {
+          withCredentials: true
         });
-        setStats(res.data);
+        setStats({ total_users: res.data.length, total_admins: res.data.filter(u => u.role === 'admin').length, timestamp: new Date() });
       } catch (err) {
         setError('Failed to load admin stats');
       } finally {
@@ -25,7 +24,7 @@ const Admin = () => {
       }
     };
 
-    if (user?.role === 'admin') {
+    if (user?.role === 'Admin') {
       fetchStats();
     }
   }, [user]);
