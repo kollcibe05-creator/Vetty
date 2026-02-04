@@ -2,6 +2,7 @@ from sqlalchemy.orm import validates
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.sql import func
+from sqlalchemy import event
 
 from config import db, bcrypt
 
@@ -76,21 +77,21 @@ class Review(db.Model, SerializerMixin):
 
     serialize_rules = ("-user.reviews", "-product.reviews", "-service.reviews", )
     
-    @validates("rating")
-    def validate_rating(self, key,value):
-        if not 1 <= value <=5:
-            raise ValueError("Rating must be between 1 and 5")
-        return value
-    @validates("product_id", "service_id") 
-    def validate_target(self, key, value):
-        product_id = value if key == "product_id" else self.product_id   
-        service_id = value if key == "service_id" else self.service_id   
+    # @validates("rating")
+    # def validate_rating(self, key,value):
+    #     if not 1 <= value <=5:
+    #         raise ValueError("Rating must be between 1 and 5")
+    #     return value
+    # @validates("product_id", "service_id") 
+    # def validate_target(self, key, value):
+    #     product_id = value if key == "product_id" else self.product_id   
+    #     service_id = value if key == "service_id" else self.service_id   
 
-        if not (product_id or service_id):
-            raise ValueError("Review must belong to a product or service")
-        if product_id and service_id:
-            raise ValueError("Review cannot belong to both")    
-        return value
+    #     if not (product_id or service_id):
+    #         raise ValueError("Review must belong to a product or service")
+    #     if product_id and service_id:
+    #         raise ValueError("Review cannot belong to both")    
+    #     return value
 
 
 class Category(db.Model, SerializerMixin):
@@ -355,7 +356,7 @@ class Appointment(db.Model, SerializerMixin):
     service = db.relationship("Service", back_populates="appointments")
 
     serialize_rules = ("-user.appointments", "-service.appointments","-payments.appointment")
-    @validates("payment_status")
+    @validates("status")
     def validate_status(self, key,value):
         if value not in ["Pending", "Approved", "Scheduled", "Completed", "Cancelled", "No-Show"]:
             raise ValueError("Invalid entry")
@@ -373,3 +374,11 @@ class OrderStatusHistory(db.Model, SerializerMixin):
 
     order = db.relationship("Order", back_populates="history")
     serialize_rules = ("-order.history",)
+
+@event.listens_for(Review, "before_insert")
+@event.listens_for(Review, "before_update")
+def validate_review_target(mapper, connection, target):
+    if not (target.product_id or target.service_id):
+        raise ValueError("Review must belong to a product or service")
+    if target.product_id and target.service_id:
+        raise ValueError("Review cannot belong to both")
