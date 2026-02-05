@@ -12,7 +12,7 @@ export const fetchProducts = createAsyncThunk("products/fetchAll", (categoryId =
 
 
 export const fetchProductById = createAsyncThunk("products/fetchById", (id) => {
-    return fetch(`/product/${id}`)
+    return fetch(`/products/${id}`)
     .then(r => {
         if (!r.ok) throw  new Error("Product not found")
         return r.json()    

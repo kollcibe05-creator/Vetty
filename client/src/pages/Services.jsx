@@ -8,7 +8,7 @@ import ItemCard from "../components/ItemCard";
 function Services () {
     const dispatch = useDispatch()
     const {list, loading} = useSelector(state => state.Services)
-
+    console.log(list)
     useEffect(() => {
         dispatch(fetchServices())
     }, [dispatch])

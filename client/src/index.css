@@ -48,3 +48,140 @@
   color: #222;
   font-size: 1rem;
 } */
+
+
+
+
+/* --- Auth Pages (Login/Signup) Styling --- */
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 100px); /* Centers form between navbar and footer */
+  background-color: #fdfdfd;
+  padding: 20px;
+}
+
+.form-box {
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #ebebeb;
+  width: 100%;
+  max-width: 450px;
+}
+
+.form-box h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #222;
+  text-align: center;
+}
+
+.description {
+  color: #717171;
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 0.95rem;
+}
+
+/* Form Controls */
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  color: #222;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #b0b0b0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box; /* Ensures padding doesn't affect width */
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #222;
+  box-shadow: 0 0 0 1px #222;
+}
+
+/* Validation Styles */
+.error-border {
+  border-color: #c13515 !important;
+}
+
+.error-message {
+  color: #c13515;
+  font-size: 0.75rem;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: #FF385C; /* Sweet Homes Red */
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #e31c5f;
+}
+
+.btn-primary:disabled {
+  background-color: #dddddd;
+  cursor: not-allowed;
+}
+
+.full-width {
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Alerts */
+.alert-error {
+  background-color: #fff8f6;
+  border: 1px solid #c13515;
+  color: #c13515;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* Footer Link */
+.auth-footer {
+  margin-top: 25px;
+  text-align: center;
+  color: #717171;
+  font-size: 0.9rem;
+}
+
+.auth-footer a {
+  color: #222;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.auth-footer a:hover {
+  color: #FF385C;
+}

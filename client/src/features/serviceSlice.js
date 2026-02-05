@@ -8,7 +8,7 @@ export const fetchServices = createAsyncThunk("services/fetchAll", (categoryId =
         if(!r.ok) throw new Error("Failed to fetch services")
         return r.json()
     })
-    .then (data => data)    
+    .then (data => console.log(data))    
 })
 
 
