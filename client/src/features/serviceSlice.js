@@ -1,4 +1,4 @@
-import {createSlice, createAsyncThunk} from "reduxjs/toolkit"
+import {createSlice, createAsyncThunk, isRejectedWithValue} from "@reduxjs/toolkit"
 
 
 export const fetchServices = createAsyncThunk("services/fetchAll", (categoryId = null) => {
@@ -8,7 +8,10 @@ export const fetchServices = createAsyncThunk("services/fetchAll", (categoryId =
         if(!r.ok) throw new Error("Failed to fetch services")
         return r.json()
     })
-    .then (data => console.log(data))    
+    .then (data => data) 
+    .catch (err => {
+       return (err.message)
+    }  )
 })
 
 
@@ -31,14 +34,28 @@ const serviceSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-        .addCase(fetchServices.pending, (state) => {state.loading = true})
+        .addCase(fetchServices.pending, (state) => {
+            state.loading = true
+            state.error = null
+        })
         .addCase(fetchServices.fulfilled, (state, action) => {
             state.loading = false
-            state.items = action.payload
+            state.list = action.payload
         })
+        .addCase(fetchServices.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchServiceById.pending, (state) => {
+        state.loading = true;
+      })
         .addCase(fetchServiceById.fulfilled, (state, action) => {
-            state.selectedProduct =action.payload
+            state.selectedService =action.payload
         })
+        .addCase(fetchServiceById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
     }
 })
 
