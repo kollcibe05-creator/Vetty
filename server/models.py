@@ -40,8 +40,7 @@ class Product(db.Model, SerializerMixin):
 
 
 
-    # serialize_rules = ("-reviews.product", "-category.products", "-inventory_alert.product", "-cart_items.product", "-order_items.product", "-reviews", "-cart_items", "-order_items" )  #"-inventory_alert_obj", "-category_name", "threshold"
-    serialize_rules = ("-reviews", "-category.products", "-inventory_alert.product", "-cart_items.product", "-order_items.product")  #"-inventory_alert_obj", "-category_name", "threshold"
+    serialize_rules = ("-reviews.product", "-category.products", "-inventory_alert.product", "-cart_items.product", "-order_items.product", "-reviews", "-cart_items", "-order_items" )  #"-inventory_alert_obj", "-category_name", "threshold"
 
 
 class Service(db.Model, SerializerMixin):
@@ -163,7 +162,7 @@ class Order(db.Model, SerializerMixin):
     delivery_zone = db.relationship("DeliveryZone", back_populates="orders")
     
 
-    serialize_rules = ("total_amount", "-user.orders", "-order_items.order", "-history.order", "-payments.order", "-delivery_zone.orders", )
+    serialize_rules = ("total_amount", "-user", "-order_items.order", "-history", "-payments", "-delivery_zone", '-order_items.product')
 
     @validates("status")
     def validate_status(self, key,value):
@@ -224,7 +223,7 @@ class Payment(db.Model, SerializerMixin):
     user = db.relationship("User", back_populates="payments")
 
 
-    serialize_rules = ("-order.payments", "-appointment.payments", "-user.payments")
+    serialize_rules = ("-order", "-appointment", "-user")
 
 
     @validates('payment_method')
@@ -333,9 +332,7 @@ class User(db.Model, SerializerMixin):
     reviews = db.relationship("Review", back_populates="user")
     role = db.relationship("Role", back_populates="users")
 
-    # serialize_rules = ("-password_hash","-_password_hash","-orders", "reviews", "-appointments", "-role.users", "-carts.user", "-payments.user", "-reviews.user",)
-    serialize_rules = ('-_password_hash', '-orders.user', '-reviews.user', '-carts.user', "-appointments.user", "-payments.user", '-role.users')
-
+    serialize_rules = ("-_password_hash","-orders.user", "-appointments", "-role.users", "-carts.user", "-payments.user", "-reviews.user",)
 
     @validates("email")    
     def validate_email(self, key, email):
