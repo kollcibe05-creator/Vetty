@@ -10,6 +10,8 @@ import Profile from '../pages/Profile';
 import Admin from '../pages/Admin';
 import Home from '../pages/Home';
 import MpesaForm from '../pages/MpesaForm';
+import Products from '../pages/Products';
+import Services from '../pages/Services';
 
 const Layout = () => (
   <div className="min-h-screen flex flex-col">
@@ -29,6 +31,8 @@ const router = createBrowserRouter([
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <Signup /> },
       { path: 'home', element: <Home /> },
+      { path: 'products', element: <Products /> },
+      { path: 'services', element: <Services /> },
       { path: 'mpesaForm', element: <MpesaForm /> },
       
       {
