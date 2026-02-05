@@ -40,8 +40,7 @@ class Product(db.Model, SerializerMixin):
 
 
 
-    # serialize_rules = ("-reviews.product", "-category.products", "-inventory_alert.product", "-cart_items.product", "-order_items.product", "-reviews", "-cart_items", "-order_items" )  #"-inventory_alert_obj", "-category_name", "threshold"
-    serialize_rules = ("-reviews", "-category", "-inventory_alert", "-cart_items", "-order_items")
+    serialize_rules = ("-reviews.product", "-category.products", "-inventory_alert.product", "-cart_items.product", "-order_items.product", "-reviews", "-cart_items", "-order_items" )  #"-inventory_alert_obj", "-category_name", "threshold"
 
 
 class Service(db.Model, SerializerMixin):
@@ -124,7 +123,8 @@ class DeliveryZone(db.Model, SerializerMixin):
 
     orders = db.relationship("Order", back_populates="delivery_zone")
 
-    serialize_rules = ("-orders.delivery_zone",)
+    # serialize_rules = ("-orders.delivery_zone",)
+    serialize_rules = ("-orders",)
 
 
 # Admin: inventory alerts for low-stock items
@@ -278,7 +278,8 @@ class CartItem(db.Model, SerializerMixin):
     cart  = db.relationship("Cart", back_populates="cart_items")
 
 
-    serialize_rules = ("-product.cart_items", "-cart.cart_items")
+    # serialize_rules = ("-product.cart_items", "-cart.cart_items")
+    serialize_rules = ("-product.cart_items", "-cart")
     @validates("quantity")
     def validate_quantity(self, key, value):
         if value < 1:
@@ -311,9 +312,9 @@ class User(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    @property
+    @hybrid_property
     def password(self):
-        raise AttributeError("Password is write-only") 
+        return self._password_hash    
 
     @password.setter
     def password(self, password):
@@ -331,8 +332,7 @@ class User(db.Model, SerializerMixin):
     reviews = db.relationship("Review", back_populates="user")
     role = db.relationship("Role", back_populates="users")
 
-    
-    serialize_rules = ("-_password_hash", "-orders", "-appointments", "-role", "-carts", "-payments", "-reviews")
+    serialize_rules = ("-_password_hash","-orders.user", "-appointments", "-role.users", "-carts.user", "-payments.user", "-reviews.user",)
 
     @validates("email")    
     def validate_email(self, key, email):

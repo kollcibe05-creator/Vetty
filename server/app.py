@@ -62,7 +62,12 @@ class Login(Resource):
         user = User.query.filter_by(username=data.get('username')).first()
         if user and user.check_password(data.get('password')):
             session['user_id'] = user.id
-            return user.to_dict(), 200
+            return {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role.name if user.role else "User"
+            }, 200
 
         return {"error": "Invalid username or password"}, 401
 
