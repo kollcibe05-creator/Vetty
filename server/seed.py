@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
+
 from random import choice, randint, sample
 from faker import Faker
 from config import app, db
-from models import (User, Role, Product, Service, Category, Review, 
-                    DeliveryZone, InventoryAlert, Order, OrderItem, 
-                    Payment, Cart, CartItem, Appointment, OrderStatusHistory)
+from models import (
+    User, Role, Product, Service, Category, Review,
+    DeliveryZone, InventoryAlert, Order, OrderItem,
+    Payment, Cart, Appointment, OrderStatusHistory
+)
 
 fake = Faker()
 
@@ -14,22 +17,29 @@ def make_seed():
         db.drop_all()
         db.create_all()
 
+        # ---------------- ROLES ----------------
         print("Creating Roles...")
         admin_role = Role(name="Admin")
         user_role = Role(name="User")
         db.session.add_all([admin_role, user_role])
         db.session.commit()
 
+        # ---------------- CATEGORIES ----------------
         print("Creating Categories...")
-        # Product Categories
-        p_cat_names = ["Pet Food", "Toys", "Grooming Tools", "Medicine", "Accessories"]
-        p_categories = [Category(name=n, category_type="Product") for n in p_cat_names]
-        # Service Categories
-        s_cat_names = ["Veterinary", "Grooming", "Training", "Pet Sitting"]
-        s_categories = [Category(name=n, category_type="Service") for n in s_cat_names]
+        p_categories = [
+            Category(name=n, category_type="Product")
+            for n in ["Pet Food", "Toys", "Grooming Tools", "Medicine", "Accessories"]
+        ]
+
+        s_categories = [
+            Category(name=n, category_type="Service")
+            for n in ["Veterinary", "Grooming", "Training", "Pet Sitting"]
+        ]
+
         db.session.add_all(p_categories + s_categories)
         db.session.commit()
 
+        # ---------------- DELIVERY ZONES ----------------
         print("Creating Delivery Zones...")
         zones = [
             DeliveryZone(zone_name="Nairobi CBD", delivery_fee=200),
@@ -38,7 +48,9 @@ def make_seed():
             DeliveryZone(zone_name="Kiambu", delivery_fee=450),
         ]
         db.session.add_all(zones)
+        db.session.commit()
 
+        # ---------------- PRODUCTS ----------------
         print("Creating Products...")
         products = []
         for _ in range(20):
@@ -51,15 +63,18 @@ def make_seed():
                 category=choice(p_categories)
             )
             products.append(p)
+
         db.session.add_all(products)
         db.session.commit()
 
-        print("Creating Inventory Alerts for low stock items...")
+        # ---------------- INVENTORY ALERTS ----------------
+        print("Creating Inventory Alerts...")
         for p in products:
             if p.stock_quantity < 10:
-                alert = InventoryAlert(product=p, threshold=10)
-                db.session.add(alert)
+                db.session.add(InventoryAlert(product=p, threshold=10))
+        db.session.commit()
 
+        # ---------------- SERVICES ----------------
         print("Creating Services...")
         services = []
         for name in ["Full Vaccination", "Dental Cleaning", "Behavioral Training", "Summer Haircut"]:
@@ -71,17 +86,22 @@ def make_seed():
                 category=choice(s_categories)
             )
             services.append(s)
+
         db.session.add_all(services)
         db.session.commit()
 
+        # ---------------- USERS & CARTS ----------------
         print("Creating Users and Carts...")
         users = []
-        # Create 1 Admin
-        admin = User(username="admin_vet", email="admin@vetty.com", role=admin_role)
+
+        admin = User(
+            username="admin_vet",
+            email="admin@vetty.com",
+            role=admin_role
+        )
         admin.password = "admin123"
         users.append(admin)
-        
-        # Create 10 Users
+
         for _ in range(10):
             u = User(
                 username=fake.user_name(),
@@ -90,80 +110,84 @@ def make_seed():
             )
             u.password = "password123"
             users.append(u)
+
         db.session.add_all(users)
         db.session.commit()
 
-        # Create Carts for users
         for u in users:
-            c = Cart(user=u)
-            db.session.add(c)
+            db.session.add(Cart(user=u))
         db.session.commit()
 
+        # ---------------- ORDERS / APPOINTMENTS / REVIEWS ----------------
         print("Populating Orders, Appointments, and Reviews...")
         for u in users:
-            # 1. Appointments
+
+            # Appointments
             if randint(0, 1):
-                app_date = fake.date_time_between(start_date='now', end_date='+30d')
                 appt = Appointment(
-                    user=u, service=choice(services), 
-                    appointment_date=app_date, 
+                    user=u,
+                    service=choice(services),
+                    appointment_date=fake.date_time_between(start_date='now', end_date='+30d'),
                     status="Scheduled",
                     total_price=randint(2000, 5000),
                     notes="Please handle with care."
                 )
                 db.session.add(appt)
 
-            # 2. Orders
+            # Orders
             if randint(0, 1):
                 order = Order(
-                    user=u, 
+                    user=u,
                     delivery_zone=choice(zones),
                     status=choice(["Pending", "Approved", "Delivered"])
                 )
                 db.session.add(order)
-                db.session.flush() # Get order ID
+                db.session.flush()
 
-                # Add Order Items
                 for p in sample(products, randint(1, 3)):
-                    item = OrderItem(
-                        order=order, product=p, 
-                        quantity=randint(1, 2), 
-                        unit_price=p.price
-                    )
-                    db.session.add(item)
-                
-                # Add Status History
-                history = OrderStatusHistory(order=order, status=order.status)
-                db.session.add(history)
+                    qty = randint(1, 2)
+                    p.stock_quantity = max(p.stock_quantity - qty, 0)
 
-                # Add Payment (Success)
-                payment = Payment(
-                    user=u, order=order, 
+                    db.session.add(OrderItem(
+                        order=order,
+                        product=p,
+                        quantity=qty,
+                        unit_price=p.price
+                    ))
+
+                db.session.add(OrderStatusHistory(order=order, status=order.status))
+
+                db.session.add(Payment(
+                    user=u,
+                    order=order,
                     payment_method="M-Pesa",
                     amount=randint(1000, 5000),
-                    status="success",
-                    mpesa_receipt_number=fake.bothify(text='??#?#?#?#?').upper()
-                )
-                db.session.add(payment)
+                    status="Completed",
+                    mpesa_receipt_number=fake.bothify("MP#######")
+                ))
 
-            # 3. Reviews
+            # Reviews (exactly ONE target)
             if randint(0, 1):
-                rev = Review(
-                    user=u,
-                    comment=fake.sentence(),
-                    rating=randint(3, 5),
-                    product=choice(products) if randint(0,1) else None,
-                    service=None if randint(0,1) else choice(services)
-                )
-                # Ensure the review targets exactly one
-                if not rev.product and not rev.service:
-                    rev.product = products[0]
-                elif rev.product and rev.service:
-                    rev.service = None
-                db.session.add(rev)
+                if randint(0, 1):
+                    review = Review(
+                        user=u,
+                        product=choice(products),
+                        service=None,
+                        rating=randint(3, 5),
+                        comment=fake.sentence()
+                    )
+                else:
+                    review = Review(
+                        user=u,
+                        product=None,
+                        service=choice(services),
+                        rating=randint(3, 5),
+                        comment=fake.sentence()
+                    )
+                db.session.add(review)
 
         db.session.commit()
-        print("Seeding complete!")
+        print("✅ Seeding complete!")
 
 if __name__ == "__main__":
     make_seed()

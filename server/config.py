@@ -1,8 +1,5 @@
 import os
-from flask import render_template
 from dotenv import load_dotenv
-load_dotenv()
-
 
 from flask import Flask
 from flask_bcrypt import Bcrypt
@@ -12,21 +9,52 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 
+# =========================
+# LOAD ENV VARIABLES
+# =========================
+load_dotenv()
+
+# =========================
+# APP CONFIG
+# =========================
 app = Flask(__name__)
-app.secret_key = b'j-1%\x913\\\xd0\xe1\xcd\xcf\xf4\xe7h\xacK'
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///app.db"
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.secret_key = os.getenv(
+    "SECRET_KEY",
+    "dev-secret-key-change-me"
+)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///app.db"
+)
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.json.compact = False
 
-metadata = MetaData(naming_convention={
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-})
+# =========================
+# DATABASE SETUP
+# =========================
+metadata = MetaData(
+    naming_convention={
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    }
+)
+
 db = SQLAlchemy(metadata=metadata)
 
+# =========================
+# EXTENSIONS
+# =========================
 migrate = Migrate(app, db)
 db.init_app(app)
 
 bcrypt = Bcrypt(app)
 
 api = Api(app)
-CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+
+CORS(
+    app,
+    supports_credentials=True,
+    origins=["http://localhost:5173"]
+)
