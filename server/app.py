@@ -40,7 +40,7 @@ class Signup(Resource):
                 username=data.get('username'),
                 email=data.get('email'),
                 role=customer_role,
-                # vetting_status='not_started' 
+                vetting_status='not_started' 
             )
             new_user.password = data.get('password')  
             db.session.add(new_user)
