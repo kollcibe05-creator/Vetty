@@ -22,14 +22,10 @@ const Profile = () => {
 
   return (
     <div>
-      <h2>Welcome, {user.username}!</h2>
-      <p>Email: {user.email}</p>
-      <p>Role: {user.role}</p>
-      <p>Vetting Status: {user.vetting_status}</p>
-
-      {user.vetting_status === 'not_started' && (
-        <p>You can start your background verification process from here (coming soon).</p>
-      )}
+      <h2>Welcome, {user?.name || 'User'}!</h2>
+      <p>User ID: {user?.id}</p>
+      <p>Account created: {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}</p>
+      <p>Last updated: {user?.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'Unknown'}</p>
     </div>
   );
 };

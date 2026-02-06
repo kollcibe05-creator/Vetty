@@ -17,6 +17,8 @@ const Navbar = () => {
           <NavLink to="/home" className="text-white hover:text-blue-200">Vetty</NavLink>
         </div>
         <div className="flex space-x-4 items-center">
+          <NavLink to="/products" className="text-white hover:text-blue-200">Products</NavLink>
+          <NavLink to="/services" className="text-white hover:text-blue-200">Services</NavLink>
           {isAuthenticated ? (
             <>
               <NavLink to="/home" className="text-white hover:text-blue-200">Home</NavLink>

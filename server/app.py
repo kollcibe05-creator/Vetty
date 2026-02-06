@@ -34,32 +34,38 @@ class Signup(Resource):
         if User.query.filter_by(email=data.get("email")).first():
             return {"error": "Email already registered"}, 400
         try:
+            customer_role = Role.query.filter_by(name="Customer").first()
+            
             new_user = User(
                 username=data.get('username'),
                 email=data.get('email'),
-                role_id=2
+                role=customer_role,
+                vetting_status='not_started' 
             )
             new_user.password = data.get('password')  
             db.session.add(new_user)
-            db.session.commit()
+            db.session.flush() # Get the ID before committing
 
-            #Create a cart
-            new_cart = Cart(user_id=new_user.id)
+            # Create the cart using the Model explicitly
+            from models import Cart as CartModel
+            new_cart = CartModel(user_id=new_user.id)
             db.session.add(new_cart)
+            
             db.session.commit()
-
             session['user_id'] = new_user.id
-
             return new_user.to_dict(), 201
         except Exception as e:
             db.session.rollback()
             return {"errors": [str(e)]}, 422
 
-
 class Login(Resource):
     def post(self):
         data = request.get_json()
-        user = User.query.filter_by(username=data.get('username')).first()
+        # Try to find user by email first, then by username
+        user = User.query.filter_by(email=data.get('email')).first()
+        if not user:
+            user = User.query.filter_by(username=data.get('username')).first()
+            
         if user and user.check_password(data.get('password')):
             session['user_id'] = user.id
             return {
@@ -69,7 +75,7 @@ class Login(Resource):
                 "role": user.role.name if user.role else "User"
             }, 200
 
-        return {"error": "Invalid username or password"}, 401
+        return {"error": "Invalid email/username or password"}, 401
 
 
 class Logout(Resource):
@@ -192,35 +198,27 @@ class ReviewList(Resource):
     def get(self):
         reviews = Review.query.all()
         return [r.to_dict() for  r in reviews], 200
-    #implemented service layer constraint
+    
     def post(self):
-        data = request.get_json()
         user_id = session.get('user_id')
-
-        product_id = data.get("product_id")
-        service_id = data.get("service_id")
-
         if not user_id:
             return {"error": "Unauthorized"}, 401
-
         
-        if bool(product_id) == bool(service_id):
-            return {"error": "Review must target exactly one product or service"}, 400
-        # if (product_id and service_id) or (not product_id and not service_id):
-        #     return {"error": "Review must target exactly one product or service"}, 400
-
-        new_review = Review(
-            user_id=user_id,
-            comment=data.get('comment'),
-            product_id=product_id,
-            service_id=service_id,
-            rating=data.get('rating')
-        )
-        db.session.add(new_review)
-        db.session.commit()
-        return new_review.to_dict(), 201
-
-
+        data = request.get_json()
+        try:
+            review = Review(
+                rating=data.get('rating'),
+                comment=data.get('comment'),
+                user_id=user_id,
+                product_id=data.get('product_id'),
+                service_id=data.get('service_id')
+            )
+            db.session.add(review)
+            db.session.commit()
+            return review.to_dict(), 201
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 422
 
 
 class AppointmentList(Resource):
@@ -615,6 +613,14 @@ class MpesaPayment(Resource):
             db.session.rollback()
             return {"error": f"Payment initiation failed: {str(e)}"}, 500
 
+<<<<<<< HEAD
+class CartResource(Resource):
+    def get(self):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+=======
+>>>>>>> origin/dev
 
 # class CartList(Resource):
 #     def get(self):
@@ -651,6 +657,107 @@ class MpesaPayment(Resource):
 #             db.session.add(cart)
 #             db.session.commit()
         
+<<<<<<< HEAD
+        return {"message": "Cart cleared"}, 200
+
+class CartItemResource(Resource):
+    def patch(self, cart_item_id):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+
+        cart_item = CartItem.query.get(cart_item_id)
+        if not cart_item or cart_item.cart.user_id != user_id:
+            return {"error": "Cart item not found"}, 404
+
+        data = request.get_json()
+        new_quantity = data.get('quantity')
+        
+        if new_quantity and new_quantity > 0:
+            if new_quantity > cart_item.product.stock_quantity:
+                return {"error": "Insufficient stock"}, 400
+            cart_item.quantity = new_quantity
+            db.session.commit()
+
+        cart = cart_item.cart
+        total_amount = sum(item.quantity * item.product.price for item in cart.cart_items)
+        
+        return {
+            "cart_items": [item.to_dict() for item in cart.cart_items],
+            "total_amount": total_amount
+        }, 200
+
+    def delete(self, cart_item_id):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+
+        cart_item = CartItem.query.get(cart_item_id)
+        if not cart_item or cart_item.cart.user_id != user_id:
+            return {"error": "Cart item not found"}, 404
+
+        db.session.delete(cart_item)
+        db.session.commit()
+        
+        return {"message": "Item removed from cart"}, 200
+
+class PaymentList(Resource):
+    def post(self):
+        data = request.get_json()
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+
+        if bool(data.get("order_id")) == bool(data.get("appointment_id")):
+            return {"error": "Payment must be for either Order or Service"}    
+
+        new_payment = Payment(
+            user_id=user_id,
+            order_id=data.get('order_id'),
+            appointment_id=data.get('appointment_id'),
+            payment_method=data.get('payment_method'),
+            # transaction_reference=data.get('transaction_reference'),
+            amount=data.get('amount'),
+            status=data.get('status', 'pending'),
+
+            checkout_request_id=data.get('checkout_request_id'),
+            merchant_request_id=data.get('merchant_request_id'),
+            phone_number=data.get('phone_number'),
+            mpesa_receipt_number=data.get('mpesa_receipt_number'),
+            # payment_date=datetime.utcnow()
+        )
+        db.session.add(new_payment)
+        db.session.commit()
+        return {"message": "Payment initiated", "id": new_payment.id}, 201
+
+
+
+
+class OrderList(Resource):
+
+    def get(self):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+
+        user = db.session.get(User, user_id)
+        if user.role.name == "Admin":
+            orders = Order.query.all()
+        else:
+            orders = Order.query.filter_by(user_id=user_id).all()
+        return [o.to_dict() for o in orders], 200
+    def post(self):
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+        data = request.get_json()
+        items = data.get("items", [])
+        if not items:
+            return {"error": "Order cannot be empty"}, 400
+
+        try:
+            new_order = Order(user_id=user_id, status="Pending")
+=======
 #         item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()    
 #         if item:
 #             item.quantity += data.get("quantity", 1)
@@ -662,6 +769,7 @@ class MpesaPayment(Resource):
 #             )
 #             db.session.add(item)
 #             db.session.commit()
+>>>>>>> origin/dev
             
                 
 
@@ -740,13 +848,40 @@ api.add_resource(ServiceList, '/services')
 api.add_resource(DeliveryZoneList, '/delivery-zones')
 api.add_resource(ReviewList, '/reviews')
 api.add_resource(AppointmentList, '/appointments')
+<<<<<<< HEAD
+api.add_resource(CartList, '/carts')
+api.add_resource(CartItemList, '/cart-items')
 api.add_resource(CartResource, '/cart')
+api.add_resource(CartItemResource, '/cart/<int:cart_item_id>')
+=======
+api.add_resource(CartResource, '/cart')
+>>>>>>> origin/dev
 api.add_resource(PaymentList, '/payments')
 api.add_resource(OrderList, "/orders")
 api.add_resource(Checkout, "/check-out")
 api.add_resource(OrderStatusHistoryResource, "/orders/status-history/<int:id>")
 api.add_resource(InventoryAlertList, "/alerts", "/alerts/<int:alert_id>")
 
+<<<<<<< HEAD
+# Admin endpoints
+class AdminStats(Resource):
+    @admin_required
+    def get(self):
+        # Calculate total revenue from completed payments
+        total_revenue = db.session.query(db.func.sum(Payment.amount)).filter(Payment.status == 'Completed').scalar() or 0
+        
+        # Gather counts for admin notification badges
+        summary = {
+            "revenue": float(total_revenue),
+            "total_users": User.query.count(),
+            "total_products": Product.query.count(),
+            "total_services": Service.query.count(),
+            "pending_orders": Order.query.filter_by(status='Pending').count(),
+            "low_stock_alerts": InventoryAlert.query.count(),
+            "upcoming_appointments": Appointment.query.filter(Appointment.appointment_date >= datetime.now()).count()
+        }
+        return summary, 200
+=======
 #Suleiman init
 api.add_resource(MpesaPayment, '/payments/mpesa')
 
@@ -762,6 +897,17 @@ api.add_resource(OrderItemByID, "/order-items/<int:id>")
 # api.add_resource(CartItemResource, '/cart/<int:cart_item_id>')
 # api.add_resource(CartItemList, '/cart-items')
 # api.add_resource(CartList, '/carts')
+>>>>>>> origin/dev
 
-if __name__ == "__main__":
+class AdminUsers(Resource):
+    @admin_required
+    def get(self):
+        users = User.query.all()
+        return [user.to_dict() for user in users], 200
+
+api.add_resource(AdminStats, "/admin/stats")
+api.add_resource(AdminUsers, "/admin/users")
+
+
+if __name__ == '__main__':
     app.run(port=5555, debug=True)

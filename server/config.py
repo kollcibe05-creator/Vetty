@@ -13,7 +13,12 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 
 app = Flask(__name__)
+<<<<<<< HEAD
+
+app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
+=======
 app.secret_key = b'j-1%\x913\\\xd0\xe1\xcd\xcf\xf4\xe7h\xacK'
+>>>>>>> origin/dev
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///app.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
@@ -29,4 +34,12 @@ db.init_app(app)
 bcrypt = Bcrypt(app)
 
 api = Api(app)
+<<<<<<< HEAD
+CORS(app, 
+     origins=['http://localhost:5176', 'http://localhost:5173'],
+     supports_credentials=True,
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+)
+=======
 CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+>>>>>>> origin/dev
