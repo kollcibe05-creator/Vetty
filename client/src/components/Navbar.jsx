@@ -23,7 +23,7 @@ const Navbar = () => {
             <>
               <NavLink to="/home" className="text-white hover:text-blue-200">Home</NavLink>
               <NavLink to="/profile" className="text-white hover:text-blue-200">Profile</NavLink>
-              {user?.role === 'Admin' && <NavLink to="/admin" className="text-white hover:text-blue-200">Admin</NavLink>}
+              {(user?.role === 'Admin' || user?.role?.name === 'Admin') && <NavLink to="/admin" className="text-white hover:text-blue-200">Admin</NavLink>}
               <button 
                 onClick={() => dispatch(logout())} 
                 className="bg-white text-blue-600 px-4 py-2 rounded hover:bg-blue-100"

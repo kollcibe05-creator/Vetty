@@ -20,12 +20,12 @@ const Login = () => {
  
 
     const schema = yup.object({
-    username: yup.string().required("Username is required"),
+    email: yup.string().email("Invalid email").required("Email is required"),
     password: yup.string().required("Password is required"),
   });
 
   const formik = useFormik({
-    initialValues: { username: "", password: "" },
+    initialValues: { email: "", password: "" },
     validationSchema: schema,
     onSubmit: async (values, { resetForm }) => {
 
@@ -47,14 +47,14 @@ const Login = () => {
 
         <form onSubmit={formik.handleSubmit}>
           <div className="input-group">
-            <label>Username</label>
+            <label>Email</label>
             <input
-              type="text"
-              {...formik.getFieldProps("username")}
-              className={formik.touched.username && formik.errors.username ? "error-border" : ""}
+              type="email"
+              {...formik.getFieldProps("email")}
+              className={formik.touched.email && formik.errors.email ? "error-border" : ""}
             />
-            {formik.touched.username && formik.errors.username && (
-              <p className="error-message">{formik.errors.username}</p>
+            {formik.touched.email && formik.errors.email && (
+              <p className="error-message">{formik.errors.email}</p>
             )}
           </div>
 

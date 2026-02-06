@@ -173,7 +173,7 @@ const ReviewSection = ({ productId, serviceId }) => {
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center space-x-2">
                   <div className="flex items-center">
-                    <span className="font-medium text-gray-900">{review.user?.username}</span>
+                    <span className="font-medium text-gray-900">{review.user?.name || review.user?.username || 'Anonymous'}</span>
                     <span className="text-sm text-gray-500">
                       {new Date(review.created_at).toLocaleDateString()}
                     </span>

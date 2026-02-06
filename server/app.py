@@ -1,8 +1,9 @@
 
 from flask import request, session 
+from models import User
 
 from flask_restful import Resource
-from config import app, db, api
+from config import app, db, api, bcrypt
 
 from datetime import datetime
 
@@ -11,6 +12,8 @@ from models import (Product, CartItem, Cart, DeliveryZone,
     OrderItem, Review, User, Role, OrderStatusHistory,
     Appointment, Category
 )
+
+
 
 from functools import wraps
 
@@ -61,22 +64,16 @@ class Signup(Resource):
 class Login(Resource):
     def post(self):
         data = request.get_json()
-        # Try to find user by email first, then by username
-        user = User.query.filter_by(email=data.get('email')).first()
-        if not user:
-            user = User.query.filter_by(username=data.get('username')).first()
-            
-        if user and user.check_password(data.get('password')):
-            session['user_id'] = user.id
-            return {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "role": user.role.name if user.role else "User"
-            }, 200
 
-        return {"error": "Invalid email/username or password"}, 401
+        user = User.query.filter_by(email=data['email']).first()
 
+        if not user or not user.check_password(data['password']):
+            return {"error": "Invalid credentials"}, 401
+
+        # ✅ CORRECT PLACE
+        session['user_id'] = user.id
+
+        return user.to_dict(), 200
 
 class Logout(Resource):
     def delete(self):
@@ -613,14 +610,11 @@ class MpesaPayment(Resource):
             db.session.rollback()
             return {"error": f"Payment initiation failed: {str(e)}"}, 500
 
-<<<<<<< HEAD
 class CartResource(Resource):
     def get(self):
         user_id = session.get('user_id')
         if not user_id:
             return {"error": "Unauthorized"}, 401
-=======
->>>>>>> origin/dev
 
 # class CartList(Resource):
 #     def get(self):
@@ -657,7 +651,6 @@ class CartResource(Resource):
 #             db.session.add(cart)
 #             db.session.commit()
         
-<<<<<<< HEAD
         return {"message": "Cart cleared"}, 200
 
 class CartItemResource(Resource):
@@ -746,31 +739,15 @@ class OrderList(Resource):
         else:
             orders = Order.query.filter_by(user_id=user_id).all()
         return [o.to_dict() for o in orders], 200
-    def post(self):
-        user_id = session.get("user_id")
-        if not user_id:
-            return {"error": "Unauthorized"}, 401
-        data = request.get_json()
-        items = data.get("items", [])
-        if not items:
-            return {"error": "Order cannot be empty"}, 400
-
+       
         try:
             new_order = Order(user_id=user_id, status="Pending")
-=======
-#         item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()    
-#         if item:
-#             item.quantity += data.get("quantity", 1)
-#         else:
-#             item = CartItem(
-#                 cart_id=cart.id,
-#                 product_id=product.id,
-#                 quantity=data.get('quantity', 1)
-#             )
-#             db.session.add(item)
-#             db.session.commit()
->>>>>>> origin/dev
-            
+            db.session.add(new_order)
+            db.session.commit()
+            return new_order.to_dict(), 201
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500
                 
 
 #         return item.to_dict(), 201
@@ -848,21 +825,14 @@ api.add_resource(ServiceList, '/services')
 api.add_resource(DeliveryZoneList, '/delivery-zones')
 api.add_resource(ReviewList, '/reviews')
 api.add_resource(AppointmentList, '/appointments')
-<<<<<<< HEAD
-api.add_resource(CartList, '/carts')
-api.add_resource(CartItemList, '/cart-items')
 api.add_resource(CartResource, '/cart')
 api.add_resource(CartItemResource, '/cart/<int:cart_item_id>')
-=======
-api.add_resource(CartResource, '/cart')
->>>>>>> origin/dev
 api.add_resource(PaymentList, '/payments')
 api.add_resource(OrderList, "/orders")
 api.add_resource(Checkout, "/check-out")
 api.add_resource(OrderStatusHistoryResource, "/orders/status-history/<int:id>")
 api.add_resource(InventoryAlertList, "/alerts", "/alerts/<int:alert_id>")
 
-<<<<<<< HEAD
 # Admin endpoints
 class AdminStats(Resource):
     @admin_required
@@ -881,7 +851,7 @@ class AdminStats(Resource):
             "upcoming_appointments": Appointment.query.filter(Appointment.appointment_date >= datetime.now()).count()
         }
         return summary, 200
-=======
+
 #Suleiman init
 api.add_resource(MpesaPayment, '/payments/mpesa')
 
@@ -897,7 +867,6 @@ api.add_resource(OrderItemByID, "/order-items/<int:id>")
 # api.add_resource(CartItemResource, '/cart/<int:cart_item_id>')
 # api.add_resource(CartItemList, '/cart-items')
 # api.add_resource(CartList, '/carts')
->>>>>>> origin/dev
 
 class AdminUsers(Resource):
     @admin_required

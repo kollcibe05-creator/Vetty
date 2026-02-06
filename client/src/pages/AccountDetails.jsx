@@ -11,23 +11,23 @@ const AccountDetails = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700">Username</label>
-            <p className="mt-1 text-lg">{user?.username}</p>
+            <p className="mt-1 text-lg">{user?.name || 'N/A'}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
-            <p className="mt-1 text-lg">{user?.email}</p>
+            <p className="mt-1 text-lg">{user?.email || 'N/A'}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Role</label>
-            <p className="mt-1 text-lg">{user?.role?.name}</p>
+            <p className="mt-1 text-lg">{user?.role || 'User'}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Vetting Status</label>
-            <p className="mt-1 text-lg capitalize">{user?.vetting_status?.replace('_', ' ')}</p>
+            <p className="mt-1 text-lg capitalize">{user?.vetting_status?.replace('_', ' ') || 'Not Started'}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Member Since</label>
-            <p className="mt-1 text-lg">{new Date(user?.created_at).toLocaleDateString()}</p>
+            <p className="mt-1 text-lg">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}</p>
           </div>
         </div>
       </div>
