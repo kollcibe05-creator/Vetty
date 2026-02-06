@@ -1,16 +1,27 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
+import { hideSpinner, showNotification, showSpinner } from "./uiSlice"
+
+
 const API_URL = 'http://localhost:5555';
 
 // Async thunks for service operations
 export const fetchServices = createAsyncThunk(
   'services/fetchServices',
-  async (params = {}, { rejectWithValue }) => {
+  async (params = {}, { dispatch, rejectWithValue }) => {
     try {
+      dispatch(showSpinner({message: "Loading services..."}));
       const res = await axios.get(`${API_URL}/services`, { params });
+      dispatch(hideSpinner());
       return res.data;
     } catch (err) {
+      dispatch(hideSpinner());
+      dispatch(showNotification({
+        type: 'error',
+        title: 'Fetch Error',
+        message: 'Failed to fetch services'
+      }));
       return rejectWithValue(err.response?.data?.error || 'Failed to fetch services');
     }
   }
@@ -18,11 +29,19 @@ export const fetchServices = createAsyncThunk(
 
 export const fetchServiceById = createAsyncThunk(
   'services/fetchServiceById',
-  async (serviceId, { rejectWithValue }) => {
+  async (serviceId, { dispatch, rejectWithValue }) => {
     try {
+      dispatch(showSpinner({message: "Fetching service detail..."}));
       const res = await axios.get(`${API_URL}/services/${serviceId}`);
+      dispatch(hideSpinner());
       return res.data;
     } catch (err) {
+      dispatch(hideSpinner());
+      dispatch(showNotification({
+        type: 'error',
+        title: 'Fetch Error',
+        message: err.message || 'Failed to fetch service detail'
+      }));
       return rejectWithValue(err.response?.data?.error || 'Failed to fetch service');
     }
   }
@@ -60,31 +79,25 @@ export const patchService = createAsyncThunk(
     "services/patch", (formData, {dispatch, rejectWithValue}) => {
         const {id, ...fields} = formData;
         dispatch(showSpinner({message: "Saving Changes..."}))
-        return fetch(`/services/${id}`, {
-            method: "PATCH",
+        return axios.patch(`${API_URL}/services/${id}`, fields, {
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(fields),
         })
-        .then(r => {
-            if (!r.ok) throw new Error("Failed to update service")
-            return r.json()
-        })
-        .then(data => {
+        .then(res => {
             dispatch(hideSpinner())
             dispatch(showNotification({
                 type: 'success',
                 message: "Service updated!"
             }))
-            return data
+            return res.data
         })
         .catch(err => {
             dispatch(hideSpinner())
             dispatch(showNotification({
                 type: 'error',
                 title: 'Update Error',
-                message: err.message  
+                message: err.response?.data?.error || err.message  
             }))
-            return rejectWithValue(err.message)
+            return rejectWithValue(err.response?.data?.error || err.message)
         })
     }
     
@@ -93,14 +106,8 @@ export const deleteService = createAsyncThunk(
     'services/delete', 
     (id, {dispatch, rejectWithValue}) => {
         dispatch(showSpinner({message: 'Deleting Service...'}))
-        return fetch(`/services/${id}`, {
-           method: "DELETE" 
-        })
-        .then(r => {
-            if (!r.ok) throw new Error("Could not delete Service")
-            return r.status === 204? {id} : r.json();
-        })
-        .then(()=> {
+        return axios.delete(`${API_URL}/services/${id}`)
+        .then(() => {
             dispatch(hideSpinner())
             dispatch(showNotification({
                 type: "success", 
@@ -110,8 +117,8 @@ export const deleteService = createAsyncThunk(
         })
         .catch(err => {
             dispatch(hideSpinner())
-            dispatch(showNotification({type: 'error', title: 'Delete Failed', message: err.message}))
-            return rejectWithValue(err.message)
+            dispatch(showNotification({type: 'error', title: 'Delete Failed', message: err.response?.data?.error || err.message}))
+            return rejectWithValue(err.response?.data?.error || err.message)
         })
         
     }
@@ -121,31 +128,25 @@ export const postService = createAsyncThunk(
     "services/post", (formData, {dispatch, rejectWithValue}) => {
         const {id, ...fields} = formData;
         dispatch(showSpinner({message: "Saving Changes..."}))
-        return fetch("/services", {
-            method: "POST",
+        return axios.post(`${API_URL}/services`, formData, {
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(fields),
         })
-        .then(r => {
-            if (!r.ok) throw new Error("Failed to post service")
-            return r.json()
-        })
-        .then(data => {
+        .then(res => {
             dispatch(hideSpinner())
             dispatch(showNotification({
                 type: 'success',
                 message: "Service posted!"
             }))
-            return data
+            return res.data
         })
         .catch(err => {
             dispatch(hideSpinner())
             dispatch(showNotification({
                 type: 'error',
                 title: 'Post Error',
-                message: err.message  
+                message: err.response?.data?.error || err.message  
             }))
-            return rejectWithValue(err.message)
+            return rejectWithValue(err.response?.data?.error || err.message)
         })
          
     }
@@ -176,6 +177,9 @@ const serviceSlice = createSlice({
       state.filters = { ...state.filters, ...action.payload };
     },
     clearCurrentService: (state) => {
+      state.currentService = null;
+    },
+    clearSelectedService: (state) => {
       state.currentService = null;
     },
     clearError: (state) => {
@@ -238,6 +242,57 @@ const serviceSlice = createSlice({
       .addCase(fetchAppointments.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      
+      // Patch service
+      .addCase(patchService.pending, (state) => {
+         state.loading = true;
+         state.error = null;
+      })
+      .addCase(patchService.fulfilled, (state, action) => {
+              state.loading = false;
+              const index = state.items.findIndex(p => p.id == action.payload.id)
+              if (index !== -1){
+                  state.items[index] = action.payload
+              }
+              if (state.currentService?.id === action.payload.id) {
+                  state.currentService = action.payload;
+              }
+      })
+      .addCase(patchService.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      
+      // Delete service
+      .addCase(deleteService.pending, (state) => {
+            state.loading = true;
+            state.error = null
+      })
+      .addCase(deleteService.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = state.items.filter(service => service.id !== action.payload)
+        if (state.currentService?.id === action.payload) {
+            state.currentService = null;
+        }
+      })
+      .addCase(deleteService.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload;
+      })
+      
+      // Post service
+      .addCase(postService.pending, (state) => {
+            state.loading = true
+            state.error = null
+      })
+      .addCase(postService.fulfilled, (state, action) => {
+            state.loading = false
+            state.items = [...state.items, action.payload]
+      })
+      .addCase(postService.rejected, (state, action) => {
+            state.loading = false
+            state.error = action.payload
       });
   },
 });
@@ -249,6 +304,5 @@ export const selectServiceFilters = (state) => state.services.filters;
 export const selectServiceLoading = (state) => state.services.loading;
 export const selectAppointments = (state) => state.services.appointments;
 
-//remove the thunks (fetch Services)
-export const { setFilters, clearCurrentService, clearError } = serviceSlice.actions;
+export const { setFilters, clearCurrentService, clearSelectedService, clearError } = serviceSlice.actions;
 export default serviceSlice.reducer;
