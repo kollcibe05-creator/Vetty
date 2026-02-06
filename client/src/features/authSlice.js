@@ -40,7 +40,7 @@ export const login = createAsyncThunk(
       }))
       return res.data;
     } catch (err) {
-      dispatch(hideSpinner());t
+      dispatch(hideSpinner());
         const errorMessage = err.response?.data?.error || 'Login failed';
 
         dispatch(showNotification({

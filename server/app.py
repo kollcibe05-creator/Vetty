@@ -40,7 +40,7 @@ class Signup(Resource):
                 username=data.get('username'),
                 email=data.get('email'),
                 role=customer_role,
-                vetting_status='not_started' 
+                # vetting_status='not_started' 
             )
             new_user.password = data.get('password')  
             db.session.add(new_user)
@@ -61,10 +61,9 @@ class Signup(Resource):
 class Login(Resource):
     def post(self):
         data = request.get_json()
-        # Try to find user by email first, then by username
-        user = User.query.filter_by(email=data.get('email')).first()
+        user = User.query.filter_by(username=data.get('username')).first()
         if not user:
-            user = User.query.filter_by(username=data.get('username')).first()
+            user = User.query.filter_by(email=data.get('email')).first()
             
         if user and user.check_password(data.get('password')):
             session['user_id'] = user.id
@@ -613,14 +612,13 @@ class MpesaPayment(Resource):
             db.session.rollback()
             return {"error": f"Payment initiation failed: {str(e)}"}, 500
 
-<<<<<<< HEAD
-class CartResource(Resource):
-    def get(self):
-        user_id = session.get('user_id')
-        if not user_id:
-            return {"error": "Unauthorized"}, 401
-=======
->>>>>>> origin/dev
+
+# class CartResource(Resource):
+#     def get(self):
+#         user_id = session.get('user_id')
+#         if not user_id:
+#             return {"error": "Unauthorized"}, 401
+
 
 # class CartList(Resource):
 #     def get(self):
@@ -657,8 +655,8 @@ class CartResource(Resource):
 #             db.session.add(cart)
 #             db.session.commit()
         
-<<<<<<< HEAD
-        return {"message": "Cart cleared"}, 200
+
+#         return {"message": "Cart cleared"}, 200
 
 class CartItemResource(Resource):
     def patch(self, cart_item_id):
@@ -733,31 +731,31 @@ class PaymentList(Resource):
 
 
 
-class OrderList(Resource):
+# class OrderList(Resource):
 
-    def get(self):
-        user_id = session.get('user_id')
-        if not user_id:
-            return {"error": "Unauthorized"}, 401
+#     def get(self):
+#         user_id = session.get('user_id')
+#         if not user_id:
+#             return {"error": "Unauthorized"}, 401
 
-        user = db.session.get(User, user_id)
-        if user.role.name == "Admin":
-            orders = Order.query.all()
-        else:
-            orders = Order.query.filter_by(user_id=user_id).all()
-        return [o.to_dict() for o in orders], 200
-    def post(self):
-        user_id = session.get("user_id")
-        if not user_id:
-            return {"error": "Unauthorized"}, 401
-        data = request.get_json()
-        items = data.get("items", [])
-        if not items:
-            return {"error": "Order cannot be empty"}, 400
+#         user = db.session.get(User, user_id)
+#         if user.role.name == "Admin":
+#             orders = Order.query.all()
+#         else:
+#             orders = Order.query.filter_by(user_id=user_id).all()
+#         return [o.to_dict() for o in orders], 200
+#     def post(self):
+#         user_id = session.get("user_id")
+#         if not user_id:
+#             return {"error": "Unauthorized"}, 401
+#         data = request.get_json()
+#         items = data.get("items", [])
+#         if not items:
+#             return {"error": "Order cannot be empty"}, 400
 
-        try:
-            new_order = Order(user_id=user_id, status="Pending")
-=======
+#         try:
+#             new_order = Order(user_id=user_id, status="Pending")
+
 #         item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()    
 #         if item:
 #             item.quantity += data.get("quantity", 1)
@@ -769,7 +767,6 @@ class OrderList(Resource):
 #             )
 #             db.session.add(item)
 #             db.session.commit()
->>>>>>> origin/dev
             
                 
 
@@ -848,21 +845,20 @@ api.add_resource(ServiceList, '/services')
 api.add_resource(DeliveryZoneList, '/delivery-zones')
 api.add_resource(ReviewList, '/reviews')
 api.add_resource(AppointmentList, '/appointments')
-<<<<<<< HEAD
-api.add_resource(CartList, '/carts')
-api.add_resource(CartItemList, '/cart-items')
+
+# api.add_resource(CartList, '/carts')
+# api.add_resource(CartItemList, '/cart-items')
 api.add_resource(CartResource, '/cart')
 api.add_resource(CartItemResource, '/cart/<int:cart_item_id>')
-=======
-api.add_resource(CartResource, '/cart')
->>>>>>> origin/dev
+
+# api.add_resource(CartResource, '/cart')
+
 api.add_resource(PaymentList, '/payments')
 api.add_resource(OrderList, "/orders")
 api.add_resource(Checkout, "/check-out")
 api.add_resource(OrderStatusHistoryResource, "/orders/status-history/<int:id>")
 api.add_resource(InventoryAlertList, "/alerts", "/alerts/<int:alert_id>")
 
-<<<<<<< HEAD
 # Admin endpoints
 class AdminStats(Resource):
     @admin_required
@@ -881,23 +877,6 @@ class AdminStats(Resource):
             "upcoming_appointments": Appointment.query.filter(Appointment.appointment_date >= datetime.now()).count()
         }
         return summary, 200
-=======
-#Suleiman init
-api.add_resource(MpesaPayment, '/payments/mpesa')
-
-
-api.add_resource(ProductByID, "/products/<int:id>")
-api.add_resource(ServiceByID, "/services/<int:id>")
-api.add_resource(UserPaymentListByID, "/payments/<int:id>")
-api.add_resource(DeliveryZoneByID, "/delivery-zones/<int:id>")
-api.add_resource(ApproveAppointment, "/appointments/<int:id>")
-api.add_resource(OrderItems, "/order-items/<int:order_id>")
-api.add_resource(OrderItemByID, "/order-items/<int:id>")  
-
-# api.add_resource(CartItemResource, '/cart/<int:cart_item_id>')
-# api.add_resource(CartItemList, '/cart-items')
-# api.add_resource(CartList, '/carts')
->>>>>>> origin/dev
 
 class AdminUsers(Resource):
     @admin_required
