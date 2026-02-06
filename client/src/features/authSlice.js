@@ -4,10 +4,6 @@ import { createSlice, createAsyncThunk,  } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { showSpinner, hideSpinner, showNotification } from './uiSlice';
 
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/dev
 const API_URL = 'http://localhost:5555'; 
 
 export const signup = createAsyncThunk(
