@@ -10,6 +10,7 @@ const Services = () => {
   const { items, loading, filters } = useSelector(selectServices);
   const isLoading = useSelector(selectServiceLoading);
 
+<<<<<<< HEAD
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -17,6 +18,15 @@ const Services = () => {
   useEffect(() => {
     dispatch(fetchServices(filters));
   }, [dispatch, filters]);
+=======
+function Services () {
+    const dispatch = useDispatch()
+    const {list, loading} = useSelector(state => state.Services)
+    console.log(list)
+    useEffect(() => {
+        dispatch(fetchServices())
+    }, [dispatch])
+>>>>>>> origin/dev
 
   // Debounced search
   useEffect(() => {

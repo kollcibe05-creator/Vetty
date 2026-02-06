@@ -8,7 +8,8 @@ const Navbar = () => {
   const dispatch = useDispatch();
   
 
-  
+  console.log(user)
+  console.log(isAuthenticated)
   return (
     <nav className="bg-blue-600 text-white p-4 shadow-lg">
       <div className="container mx-auto flex justify-between items-center">
