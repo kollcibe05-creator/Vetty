@@ -1,14 +1,23 @@
 
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk,  } from '@reduxjs/toolkit';
+
 import axios from 'axios';
+import { showSpinner, hideSpinner, showNotification } from './uiSlice';
+
 
 const API_URL = 'http://localhost:5555'; 
 
 export const signup = createAsyncThunk(
   'auth/signup',
-  async (userData, { rejectWithValue }) => {
+  async (userData, {dispatch,  rejectWithValue }) => {
     try {
+      dispatch(showSpinner({message: "Signing you up..."}))
       await axios.post(`${API_URL}/signup`, userData);
+      dispatch(showNotification({
+        type: "success",
+        title: "successful sign up",
+        message: "welcome to the pack!"
+      }))
       return { success: true };
     } catch (err) {
       return rejectWithValue(err.response?.data?.msg || 'Signup failed');
@@ -18,13 +27,28 @@ export const signup = createAsyncThunk(
 
 export const login = createAsyncThunk(
   'auth/login',
-  async (credentials, { rejectWithValue }) => {
+  async (credentials, { dispatch, rejectWithValue }) => {
     try {
+      dispatch(showSpinner({message: "Logging you in..."}))
       const res = await axios.post(`${API_URL}/login`, credentials, {
         withCredentials: true // Important for session cookies
       });
+      dispatch(hideSpinner())
+      dispatch(showNotification({
+          type: "success",
+          title: "Welcome",
+          message: "Enjoy our products and services!"
+      }))
       return res.data;
     } catch (err) {
+      dispatch(hideSpinner());t
+        const errorMessage = err.response?.data?.error || 'Login failed';
+
+        dispatch(showNotification({
+          type: 'error',
+          title: 'Login Error',
+          message: errorMessage
+        }));
       return rejectWithValue(err.response?.data?.error || 'Login failed');
     }
   }
@@ -63,6 +87,7 @@ const authSlice = createSlice({
     
     builder.addCase(login.pending, (state) => {
       state.loading = true;
+
       state.error = null;
     });
     builder.addCase(login.fulfilled, (state, action) => {
