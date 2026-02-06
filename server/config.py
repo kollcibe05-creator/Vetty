@@ -14,6 +14,7 @@ from sqlalchemy import MetaData
 
 app = Flask(__name__)
 
+app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///app.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
@@ -29,4 +30,8 @@ db.init_app(app)
 bcrypt = Bcrypt(app)
 
 api = Api(app)
-CORS(app)
+CORS(app, 
+     origins=['http://localhost:5176', 'http://localhost:5173'],
+     supports_credentials=True,
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+)

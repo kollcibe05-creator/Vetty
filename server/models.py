@@ -263,7 +263,7 @@ class CartItem(db.Model, SerializerMixin):
     quantity = db.Column(db.Integer, nullable=False, default=1)
 
     __table_args__ = (
-        db.UniqueConstraint("cart_id", "product_id", name="uix_cart_product")
+        db.UniqueConstraint("cart_id", "product_id", name="uix_cart_product"),
     )
 
     product = db.relationship("Product", back_populates="cart_items")
@@ -299,6 +299,7 @@ class User(db.Model, SerializerMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     _password_hash = db.Column(db.String(255), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
+    vetting_status = db.Column(db.String(20), default='not_started')  # not_started, pending, approved, rejected
 
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -347,6 +348,7 @@ class Appointment(db.Model, SerializerMixin):
     total_price = db.Column(db.Integer)
 
     user = db.relationship("User", back_populates="appointments")
+    service = db.relationship("Service", back_populates="appointments")
     payments = db.relationship("Payment", back_populates="appointment", cascade="all, delete-orphan")
 
     serialize_rules = ("-user.appointments", "-service.appointments","-payments.appointment")

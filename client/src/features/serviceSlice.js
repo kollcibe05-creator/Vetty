@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://localhost:5555';
 
 // Async thunks for service operations
 export const fetchServices = createAsyncThunk(
@@ -42,12 +42,27 @@ export const searchServices = createAsyncThunk(
   }
 );
 
+export const fetchAppointments = createAsyncThunk(
+  'services/fetchAppointments',
+  async (userId, { rejectWithValue }) => {
+    try {
+      const res = await axios.get(`${API_URL}/appointments`, {
+        params: { user_id: userId }
+      });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || 'Failed to fetch appointments');
+    }
+  }
+);
+
 const serviceSlice = createSlice({
   name: 'services',
   initialState: {
     items: [],
     currentService: null,
     categories: [],
+    appointments: [],
     loading: false,
     error: null,
     filters: {
@@ -110,6 +125,20 @@ const serviceSlice = createSlice({
       .addCase(searchServices.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      
+      // Fetch appointments
+      .addCase(fetchAppointments.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAppointments.fulfilled, (state, action) => {
+        state.loading = false;
+        state.appointments = action.payload;
+      })
+      .addCase(fetchAppointments.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
@@ -119,6 +148,8 @@ export const selectServices = (state) => state.services;
 export const selectCurrentService = (state) => state.services.currentService;
 export const selectServiceFilters = (state) => state.services.filters;
 export const selectServiceLoading = (state) => state.services.loading;
+export const selectAppointments = (state) => state.services.appointments;
 
+//remove the thunks (fetch Services)
 export const { setFilters, clearCurrentService, clearError } = serviceSlice.actions;
 export default serviceSlice.reducer;

@@ -13,7 +13,7 @@ const Admin = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/users', {
+        const res = await axios.get('http://localhost:5555/users', {
           withCredentials: true
         });
         setStats({ total_users: res.data.length, total_admins: res.data.filter(u => u.role === 'admin').length, timestamp: new Date() });

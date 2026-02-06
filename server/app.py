@@ -35,37 +35,43 @@ class Signup(Resource):
         if User.query.filter_by(email=data.get("email")).first():
             return {"error": "Email already registered"}, 400
         try:
+            customer_role = Role.query.filter_by(name="Customer").first()
+            
             new_user = User(
                 username=data.get('username'),
                 email=data.get('email'),
-                role_id=2
+                role=customer_role,
+                vetting_status='not_started' 
             )
             new_user.password = data.get('password')  
             db.session.add(new_user)
-            db.session.commit()
+            db.session.flush() # Get the ID before committing
 
-            #Create a cart
-            new_cart = Cart(user_id=new_user.id)
+            # Create the cart using the Model explicitly
+            from models import Cart as CartModel
+            new_cart = CartModel(user_id=new_user.id)
             db.session.add(new_cart)
+            
             db.session.commit()
-
             session['user_id'] = new_user.id
-
             return new_user.to_dict(), 201
         except Exception as e:
             db.session.rollback()
             return {"errors": [str(e)]}, 422
 
-
 class Login(Resource):
     def post(self):
         data = request.get_json()
-        user = User.query.filter_by(username=data.get('username')).first()
+        # Try to find user by email first, then by username
+        user = User.query.filter_by(email=data.get('email')).first()
+        if not user:
+            user = User.query.filter_by(username=data.get('username')).first()
+            
         if user and user.check_password(data.get('password')):
             session['user_id'] = user.id
             return user.to_dict(), 200
 
-        return {"error": "Invalid username or password"}, 401
+        return {"error": "Invalid email/username or password"}, 401
 
 
 class Logout(Resource):
@@ -186,35 +192,27 @@ class ReviewList(Resource):
     def get(self):
         reviews = Review.query.all()
         return [r.to_dict() for  r in reviews], 200
-    #implemented service layer constraint
+    
     def post(self):
-        data = request.get_json()
         user_id = session.get('user_id')
-
-        product_id = data.get("product_id")
-        service_id = data.get("service_id")
-
         if not user_id:
             return {"error": "Unauthorized"}, 401
-
         
-        if bool(product_id) == bool(service_id):
-            return {"error": "Review must target exactly one product or service"}, 400
-        # if (product_id and service_id) or (not product_id and not service_id):
-        #     return {"error": "Review must target exactly one product or service"}, 400
-
-        new_review = Review(
-            user_id=user_id,
-            comment=data.get('comment'),
-            product_id=product_id,
-            service_id=service_id,
-            rating=data.get('rating')
-        )
-        db.session.add(new_review)
-        db.session.commit()
-        return new_review.to_dict(), 201
-
-
+        data = request.get_json()
+        try:
+            review = Review(
+                rating=data.get('rating'),
+                comment=data.get('comment'),
+                user_id=user_id,
+                product_id=data.get('product_id'),
+                service_id=data.get('service_id')
+            )
+            db.session.add(review)
+            db.session.commit()
+            return review.to_dict(), 201
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 422
 
 
 class AppointmentList(Resource):
@@ -337,7 +335,7 @@ class MpesaPayment(Resource):
             db.session.rollback()
             return {"error": f"Payment initiation failed: {str(e)}"}, 500
 
-class Cart(Resource):
+class CartResource(Resource):
     def get(self):
         user_id = session.get('user_id')
         if not user_id:
@@ -367,7 +365,7 @@ class Cart(Resource):
         
         return {"message": "Cart cleared"}, 200
 
-class CartItem(Resource):
+class CartItemResource(Resource):
     def patch(self, cart_item_id):
         user_id = session.get('user_id')
         if not user_id:
@@ -619,8 +617,8 @@ api.add_resource(ReviewList, '/reviews')
 api.add_resource(AppointmentList, '/appointments')
 api.add_resource(CartList, '/carts')
 api.add_resource(CartItemList, '/cart-items')
-api.add_resource(Cart, '/cart')
-api.add_resource(CartItem, '/cart/<int:cart_item_id>')
+api.add_resource(CartResource, '/cart')
+api.add_resource(CartItemResource, '/cart/<int:cart_item_id>')
 api.add_resource(PaymentList, '/payments')
 api.add_resource(MpesaPayment, '/payments/mpesa')
 api.add_resource(OrderList, "/orders")
@@ -630,6 +628,34 @@ api.add_resource(OrderStatusHistoryList, "/orders/<int:order_id>/history")
 
 api.add_resource(InventoryAlertList, "/alerts", "/alerts/<int:alert_id>")
 
+# Admin endpoints
+class AdminStats(Resource):
+    @admin_required
+    def get(self):
+        # Calculate total revenue from completed payments
+        total_revenue = db.session.query(db.func.sum(Payment.amount)).filter(Payment.status == 'Completed').scalar() or 0
+        
+        # Gather counts for admin notification badges
+        summary = {
+            "revenue": float(total_revenue),
+            "total_users": User.query.count(),
+            "total_products": Product.query.count(),
+            "total_services": Service.query.count(),
+            "pending_orders": Order.query.filter_by(status='Pending').count(),
+            "low_stock_alerts": InventoryAlert.query.count(),
+            "upcoming_appointments": Appointment.query.filter(Appointment.appointment_date >= datetime.now()).count()
+        }
+        return summary, 200
 
-if __name__ == "__main__":
+class AdminUsers(Resource):
+    @admin_required
+    def get(self):
+        users = User.query.all()
+        return [user.to_dict() for user in users], 200
+
+api.add_resource(AdminStats, "/admin/stats")
+api.add_resource(AdminUsers, "/admin/users")
+
+
+if __name__ == '__main__':
     app.run(port=5555, debug=True)

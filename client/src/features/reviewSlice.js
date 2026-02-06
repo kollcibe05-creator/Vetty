@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://localhost:5555';
 
 // Async thunks for review operations
 export const fetchReviews = createAsyncThunk(
@@ -20,7 +20,9 @@ export const createReview = createAsyncThunk(
   'reviews/createReview',
   async (reviewData, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${API_URL}/reviews`, reviewData);
+      const res = await axios.post(`${API_URL}/reviews`, reviewData, {
+        withCredentials: true
+      });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to create review');
