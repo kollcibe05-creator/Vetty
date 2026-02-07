@@ -37,7 +37,7 @@ class Signup(Resource):
         if User.query.filter_by(email=data.get("email")).first():
             return {"error": "Email already registered"}, 400
         try:
-            customer_role = Role.query.filter_by(name="Customer").first()
+            customer_role = Role.query.filter_by(name="User").first()
             
             new_user = User(
                 username=data.get('username'),
@@ -69,7 +69,7 @@ class Login(Resource):
             return {"error": "Invalid credentials"}, 401
 
         session['user_id'] = user.id
-
+        print(user.username)
         return user.to_dict(), 200
 
 class Logout(Resource):

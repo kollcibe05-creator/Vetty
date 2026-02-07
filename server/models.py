@@ -314,18 +314,29 @@ class User(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    # 🔒 WRITE-ONLY PASSWORD
     @hybrid_property
     def password(self):
-        return self._password_hash    
+        raise AttributeError("Password is write-only.")
 
     @password.setter
     def password(self, password):
+        if not password or len(password) < 8:
+            raise ValueError("Password must be at least 8 characters long.")
+
         self._password_hash = bcrypt.generate_password_hash(
             password.encode("utf-8")
-        ).decode("utf-8")    
+        ).decode("utf-8")
 
     def check_password(self, password):
-        return bcrypt.check_password_hash(self._password_hash, password.encode("utf-8"))
+        if not self._password_hash:
+            return False
+
+        return bcrypt.check_password_hash(
+            self._password_hash,
+            password.encode("utf-8")
+        )
+
     
     appointments = db.relationship("Appointment", back_populates="user", cascade="all, delete-orphan")
     carts = db.relationship("Cart", back_populates="user", uselist=False)  #added uselist
