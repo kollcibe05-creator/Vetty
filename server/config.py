@@ -14,7 +14,9 @@ from sqlalchemy import MetaData
 
 app = Flask(__name__)
 
-app.secret_key = os.getenv('SECRET_KEY')
+#To be implemented later
+# app.secret_key = os.getenv('SECRET_KEY')
+app.secret_key = b'\xc9u/\xf0\xa8\xb6\xa5\xee\xe6G\xb7e\xb8,\xa98'
 
 
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///app.db"
@@ -37,4 +39,4 @@ api = Api(app)
 #      supports_credentials=True,
 #      methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
 # )
-CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+CORS(app, supports_credentials=True, origins=["http://localhost:5173", "http://127.0.0.1:5173" ])

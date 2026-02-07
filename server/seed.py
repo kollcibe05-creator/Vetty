@@ -24,7 +24,7 @@ def seed_data():
 
     print("Creating Roles...")
     admin_role = Role(name="Admin")
-    customer_role = Role(name="Customer")
+    customer_role = Role(name="User")
     db.session.add_all([admin_role, customer_role])
     db.session.commit()
 
