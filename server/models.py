@@ -171,7 +171,8 @@ class Order(db.Model, SerializerMixin):
         return value 
     @hybrid_property
     def total_amount(self):
-        return sum(item.subtotal for item in self.order_items)
+        items_total =  sum(item.subtotal for item in self.order_items)
+        return items_total + (self.delivery_zone.delivery_fee if self.delivery_zone else 0)
 
 
 
@@ -244,7 +245,7 @@ class Payment(db.Model, SerializerMixin):
         return value
     @validates("status")
     def validate_payment_status(self, key, value):
-        if value not in ["pending", "success", "fail"]:
+        if value not in ["pending", "success", "failed"]:
             raise ValueError("invalid entry!")
         return value    
     
@@ -359,7 +360,7 @@ class Appointment(db.Model, SerializerMixin):
     user = db.relationship("User", back_populates="appointments")
     service = db.relationship("Service", back_populates="appointments")
     payments = db.relationship("Payment", back_populates="appointment", cascade="all, delete-orphan")
-    service = db.relationship("Service", back_populates="appointments")
+    
 
     serialize_rules = ("-user.appointments", "-service.appointments","-payments.appointment")
     @validates("status")

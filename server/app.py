@@ -48,10 +48,8 @@ class Signup(Resource):
             new_user.password = data.get('password')  
             db.session.add(new_user)
             db.session.flush() # Get the ID before committing
-
-            # Create the cart using the Model explicitly
-            from models import Cart as CartModel
-            new_cart = CartModel(user_id=new_user.id)
+            
+            new_cart = Cart(user_id=new_user.id)
             db.session.add(new_cart)
             
             db.session.commit()
@@ -70,7 +68,6 @@ class Login(Resource):
         if not user or not user.check_password(data['password']):
             return {"error": "Invalid credentials"}, 401
 
-        # ✅ CORRECT PLACE
         session['user_id'] = user.id
 
         return user.to_dict(), 200
@@ -234,7 +231,6 @@ class AppointmentList(Resource):
             appointment_date=appointment_date,
             notes=data.get("notes"),
             total_price=data.get('total_price'),
-            payment_status=data.get('payment_status', 'pending')
         )
         db.session.add(new_appointment)
         db.session.commit()
@@ -369,6 +365,14 @@ class OrderStatusHistoryResource(Resource):
 
     @admin_required
     def patch(self, id):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+        user = db.session.get(User, user_id)
+        order = Order.query.get(id)
+        if order.user_id != user_id and user.role.name != "Admin":
+            return {"error": "Access denied"}, 403
+
         data = request.get_json()
         new_status = data.get("status")
         
@@ -376,9 +380,10 @@ class OrderStatusHistoryResource(Resource):
         if new_status not in valid_statuses:
             return {"error": f"Invalid status. Must be one of: {valid_statuses}"}, 400
 
-        order = Order.query.get(id)
         if not order:
             return {"error": "Order not found"}, 404
+        if not new_status:
+            return {"Status is required!"}
 
         try:
             order.status = new_status
@@ -462,7 +467,7 @@ class ServiceByID(Resource):
 
 class UserPaymentListByID(Resource):
     @admin_required
-    def get(self, user_id):
+    def get(self, id):
         user_payment = Payment.query.filter_by(user_id=user_id).all()
         return [u.to_dict() for u in user_payment], 200
 
@@ -470,7 +475,7 @@ class DeliveryZoneByID(Resource):
     @admin_required
     def get(self, id):
         delivery_zone = DeliveryZone.query.filter_by(id=id).first()
-        return delivery_zone, 200
+        return delivery_zone.to_dict(), 200
     @admin_required
     def patch(self, id):
         delivery_zone = DeliveryZone.query.filter_by(id=id).first()
@@ -492,7 +497,7 @@ class ApproveAppointment(Resource):
     @admin_required
     def patch(self, id):
         data = request.get_json()
-        new_status = data.get('status') # e.g. 'Approved', 'Cancelled'
+        new_status = data.get('status') # Examples: 'Approved', 'Cancelled'
         
         appointment = Appointment.query.get(id)
         if not appointment:
@@ -503,9 +508,10 @@ class ApproveAppointment(Resource):
 
         try:
             appointment.status = new_status
+            # NO PAYMENT STATUS#####
             # If your Appointment model has a payment_status, you could update it here too
-            if new_status == "Completed":
-                appointment.payment_status = "Paid"
+            # if new_status == "Completed":
+            #     appointment.payment_status = "Paid"
                 
             db.session.commit()
             return {
@@ -538,37 +544,8 @@ class OrderItemByID(Resource):
 
 
 
-class PaymentList(Resource):
-    def post(self):
-        data = request.get_json()
-        user_id = session.get('user_id')
-        if not user_id:
-            return {"error": "Unauthorized"}, 401
 
-        if bool(data.get("order_id")) == bool(data.get("appointment_id")):
-            return {"error": "Payment must be for either Order or Service"}    
-
-        new_payment = Payment(
-            user_id=user_id,
-            order_id=data.get('order_id'),
-            appointment_id=data.get('appointment_id'),
-            payment_method=data.get('payment_method'),
-            # transaction_reference=data.get('transaction_reference'),
-            amount=data.get('amount'),
-            status=data.get('status', 'pending'),
-
-            checkout_request_id=data.get('checkout_request_id'),
-            merchant_request_id=data.get('merchant_request_id'),
-            phone_number=data.get('phone_number'),
-            mpesa_receipt_number=data.get('mpesa_receipt_number'),
-            # payment_date=datetime.utcnow()
-        )
-        db.session.add(new_payment)
-        db.session.commit()
-        return new_payment.to_dict(), 201
-
-
-#Suleiman init
+#Suleiman innit
 class MpesaPayment(Resource):
     def post(self):
         data = request.get_json()
@@ -611,50 +588,8 @@ class MpesaPayment(Resource):
             return {"error": f"Payment initiation failed: {str(e)}"}, 500
 
 
-# class CartResource(Resource):
-#     def get(self):
-#         user_id = session.get('user_id')
-#         if not user_id:
-#             return {"error": "Unauthorized"}, 401
 
 
-# class CartList(Resource):
-#     def get(self):
-#         user_id = session.get('user_id')
-#         if not user_id:
-#             return {"error": "Unauthorized"}, 401
-
-#         carts = Cart.query.filter_by(user_id=user_id).all()
-#         return [c.to_dict() for c in carts], 200
-
-
-
-
-# class CartItemList(Resource):
-#     def get(self):
-#         user_id = session.get("user_id")
-#         if not user_id:
-#             return {"error": "Unauthorized"}, 401
-#         cart = Cart.query.filter_by(user_id=user_id).first()
-#         return [item.to_dict() for item in cart.cart_items] if cart else [], 200
-#     def post(self):
-#         data = request.get_json()
-#         user_id = session.get('user_id')
-#         if not user_id:
-#             return {"error": "Unauthorized"}, 401
-
-        
-#         cart = Cart.query.filter_by(user_id=user_id).first()
-#         product = db.session.get(Product, data.get("product_id"))
-#         if not product or product.stock_quantity < data.get("quantity", 1):
-#             return {"error": "Product unavailable or insufficient stock"}, 400
-#         if not cart:
-#             cart = Cart(user_id=user_id)
-#             db.session.add(cart)
-#             db.session.commit()
-        
-
-#         return {"message": "Cart cleared"}, 200
 
 class CartItemResource(Resource):
     def patch(self, cart_item_id):
@@ -720,7 +655,6 @@ class PaymentList(Resource):
             merchant_request_id=data.get('merchant_request_id'),
             phone_number=data.get('phone_number'),
             mpesa_receipt_number=data.get('mpesa_receipt_number'),
-            # payment_date=datetime.utcnow()
         )
         db.session.add(new_payment)
         db.session.commit()
@@ -729,104 +663,7 @@ class PaymentList(Resource):
 
 
 
-# class OrderList(Resource):
 
-#     def get(self):
-#         user_id = session.get('user_id')
-#         if not user_id:
-#             return {"error": "Unauthorized"}, 401
-
-#         user = db.session.get(User, user_id)
-#         if user.role.name == "Admin":
-#             orders = Order.query.all()
-#         else:
-#             orders = Order.query.filter_by(user_id=user_id).all()
-#         return [o.to_dict() for o in orders], 200
-#     def post(self):
-#         user_id = session.get("user_id")
-#         if not user_id:
-#             return {"error": "Unauthorized"}, 401
-#         data = request.get_json()
-#         items = data.get("items", [])
-#         if not items:
-#             return {"error": "Order cannot be empty"}, 400
-
-#         try:
-#             new_order = Order(user_id=user_id, status="Pending")
-
-#         item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()    
-#         if item:
-#             item.quantity += data.get("quantity", 1)
-#         else:
-#             item = CartItem(
-#                 cart_id=cart.id,
-#                 product_id=product.id,
-#                 quantity=data.get('quantity', 1)
-#             )
-#             db.session.add(item)
-#             db.session.commit()
-            
-                
-
-#         return item.to_dict(), 201
-
-# class DashboardSummary(Resource):
-#     @admin_required
-#     def get(self):
-#         # Calculate total revenue from completed payments
-#         total_revenue = db.session.query(db.func.sum(Payment.amount)).filter(Payment.status == 'Completed').scalar() or 0
-        
-#         # Gather counts for the admin notification badges
-#         summary = {
-#             "revenue": float(total_revenue),
-#             "pending_orders": Order.query.filter_by(status='Pending').count(),
-#             "low_stock_alerts": InventoryAlert.query.filter_by(is_resolved=False).count(),
-#             "upcoming_appointments": Appointment.query.filter(Appointment.appointment_date >= datetime.now()).count()
-#         }
-        
-#         return summary, 200
-
-
-# class CartItemResource(Resource):
-#     def patch(self, cart_item_id):
-#         user_id = session.get('user_id')
-#         if not user_id:
-#             return {"error": "Unauthorized"}, 401
-
-#         cart_item = CartItem.query.get(cart_item_id)
-#         if not cart_item or cart_item.cart.user_id != user_id:
-#             return {"error": "Cart item not found"}, 404
-
-#         data = request.get_json()
-#         new_quantity = data.get('quantity')
-        
-#         if new_quantity and new_quantity > 0:
-#             if new_quantity > cart_item.product.stock_quantity:
-#                 return {"error": "Insufficient stock"}, 400
-#             cart_item.quantity = new_quantity
-#             db.session.commit()
-
-#         cart = cart_item.cart
-#         total_amount = sum(item.quantity * item.product.price for item in cart.cart_items)
-        
-#         return {
-#             "cart_items": [item.to_dict() for item in cart.cart_items],
-#             "total_amount": total_amount
-#         }, 200
-
-#     def delete(self, cart_item_id):
-#         user_id = session.get('user_id')
-#         if not user_id:
-#             return {"error": "Unauthorized"}, 401
-
-#         cart_item = CartItem.query.get(cart_item_id)
-#         if not cart_item or cart_item.cart.user_id != user_id:
-#             return {"error": "Cart item not found"}, 404
-
-#         db.session.delete(cart_item)
-#         db.session.commit()
-        
-#         return {"message": "Item removed from cart"}, 200
 
 
 
@@ -836,7 +673,6 @@ api.add_resource(Signup, '/signup')
 api.add_resource(Login, '/login')
 api.add_resource(Logout, '/logout')
 api.add_resource(CheckSession, '/check_session')
-api.add_resource(UserList, '/users')
 api.add_resource(CategoryList, '/categories')
 api.add_resource(ProductList, '/products')
 api.add_resource(ServiceList, '/services')
@@ -856,7 +692,7 @@ class AdminStats(Resource):
     @admin_required
     def get(self):
         # Calculate total revenue from completed payments
-        total_revenue = db.session.query(db.func.sum(Payment.amount)).filter(Payment.status == 'Completed').scalar() or 0
+        total_revenue = db.session.query(db.func.sum(Payment.amount)).filter(Payment.status == 'success').scalar() or 0
         
         # Gather counts for admin notification badges
         summary = {
@@ -882,18 +718,9 @@ api.add_resource(ApproveAppointment, "/appointments/<int:id>")
 api.add_resource(OrderItems, "/order-items/<int:order_id>")
 api.add_resource(OrderItemByID, "/order-items/<int:id>")  
 
-# api.add_resource(CartItemResource, '/cart/<int:cart_item_id>')
-# api.add_resource(CartItemList, '/cart-items')
-# api.add_resource(CartList, '/carts')
-
-class AdminUsers(Resource):
-    @admin_required
-    def get(self):
-        users = User.query.all()
-        return [user.to_dict() for user in users], 200
 
 api.add_resource(AdminStats, "/admin/stats")
-api.add_resource(AdminUsers, "/admin/users")
+api.add_resource(UserList, "/admin/users")
 
 
 if __name__ == '__main__':
