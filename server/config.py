@@ -14,7 +14,9 @@ from sqlalchemy import MetaData
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
+app.secret_key = os.getenv('SECRET_KEY')
+
+
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///app.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False

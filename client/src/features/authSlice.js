@@ -1,5 +1,5 @@
 
-import { createSlice, createAsyncThunk,  } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 import axios from 'axios';
 import { showSpinner, hideSpinner, showNotification } from './uiSlice';
@@ -43,12 +43,31 @@ export const login = createAsyncThunk(
       dispatch(hideSpinner());
         const errorMessage = err.response?.data?.error || 'Login failed';
 
-        dispatch(showNotification({
+      dispatch(showNotification({
           type: 'error',
           title: 'Login Error',
           message: errorMessage
         }));
       return rejectWithValue(err.response?.data?.error || 'Login failed');
+    }
+  }
+);
+
+export const logout = createAsyncThunk(
+  'auth/logout',
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      await axios.delete(`${API_URL}/logout`, {
+        withCredentials: true // Important for session cookies
+      });
+      dispatch(showNotification({
+        type: "success",
+        title: "Logged out",
+        message: "You have been logged out successfully"
+      }));
+      return { success: true };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || 'Logout failed');
     }
   }
 );
@@ -76,7 +95,7 @@ const authSlice = createSlice({
     error: null,
   },
   reducers: {
-    logout: (state) => {
+    clearAuth: (state) => {
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
@@ -113,8 +132,22 @@ const authSlice = createSlice({
       state.error = action.payload;
       state.isAuthenticated = false;
     });
+
+    builder.addCase(logout.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(logout.fulfilled, (state) => {
+      state.loading = false;
+      state.user = null;
+      state.isAuthenticated = false;
+      state.error = null;
+    });
+    builder.addCase(logout.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    });
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { clearAuth } = authSlice.actions;
 export default authSlice.reducer;

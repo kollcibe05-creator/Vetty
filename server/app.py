@@ -1,8 +1,9 @@
 
 from flask import request, session 
+from models import User
 
 from flask_restful import Resource
-from config import app, db, api
+from config import app, db, api, bcrypt
 
 from datetime import datetime
 
@@ -11,6 +12,8 @@ from models import (Product, CartItem, Cart, DeliveryZone,
     OrderItem, Review, User, Role, OrderStatusHistory,
     Appointment, Category
 )
+
+
 
 from functools import wraps
 
@@ -61,21 +64,16 @@ class Signup(Resource):
 class Login(Resource):
     def post(self):
         data = request.get_json()
-        user = User.query.filter_by(username=data.get('username')).first()
-        if not user:
-            user = User.query.filter_by(email=data.get('email')).first()
-            
-        if user and user.check_password(data.get('password')):
-            session['user_id'] = user.id
-            return {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "role": user.role.name if user.role else "User"
-            }, 200
 
-        return {"error": "Invalid email/username or password"}, 401
+        user = User.query.filter_by(email=data['email']).first()
 
+        if not user or not user.check_password(data['password']):
+            return {"error": "Invalid credentials"}, 401
+
+        # ✅ CORRECT PLACE
+        session['user_id'] = user.id
+
+        return user.to_dict(), 200
 
 class Logout(Resource):
     def delete(self):
@@ -845,14 +843,8 @@ api.add_resource(ServiceList, '/services')
 api.add_resource(DeliveryZoneList, '/delivery-zones')
 api.add_resource(ReviewList, '/reviews')
 api.add_resource(AppointmentList, '/appointments')
-
-# api.add_resource(CartList, '/carts')
-# api.add_resource(CartItemList, '/cart-items')
 api.add_resource(CartResource, '/cart')
 api.add_resource(CartItemResource, '/cart/<int:cart_item_id>')
-
-# api.add_resource(CartResource, '/cart')
-
 api.add_resource(PaymentList, '/payments')
 api.add_resource(OrderList, "/orders")
 api.add_resource(Checkout, "/check-out")
@@ -877,6 +869,22 @@ class AdminStats(Resource):
             "upcoming_appointments": Appointment.query.filter(Appointment.appointment_date >= datetime.now()).count()
         }
         return summary, 200
+
+#Suleiman init
+api.add_resource(MpesaPayment, '/payments/mpesa')
+
+
+api.add_resource(ProductByID, "/products/<int:id>")
+api.add_resource(ServiceByID, "/services/<int:id>")
+api.add_resource(UserPaymentListByID, "/payments/<int:id>")
+api.add_resource(DeliveryZoneByID, "/delivery-zones/<int:id>")
+api.add_resource(ApproveAppointment, "/appointments/<int:id>")
+api.add_resource(OrderItems, "/order-items/<int:order_id>")
+api.add_resource(OrderItemByID, "/order-items/<int:id>")  
+
+# api.add_resource(CartItemResource, '/cart/<int:cart_item_id>')
+# api.add_resource(CartItemList, '/cart-items')
+# api.add_resource(CartList, '/carts')
 
 class AdminUsers(Resource):
     @admin_required

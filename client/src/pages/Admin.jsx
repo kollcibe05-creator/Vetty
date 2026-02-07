@@ -24,7 +24,7 @@ const Admin = () => {
       }
     };
 
-    if (user?.role === 'Admin') {
+    if (user?.role?.name === 'Admin' || user?.role === 'Admin') {
       fetchStats();
     }
   }, [user]);
@@ -35,7 +35,7 @@ const Admin = () => {
   return (
     <div>
       <h2>Admin Dashboard</h2>
-      <p>Logged in as: {user?.username} (Admin)</p>
+      <p>Logged in as: {user?.name || 'Admin'} (Admin)</p>
 
       {stats && (
         <div>
