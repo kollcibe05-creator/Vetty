@@ -12,7 +12,7 @@ import Home from '../pages/Home';
 import MpesaForm from '../pages/MpesaForm';
 import Products from '../pages/Products';
 import Services from '../pages/Services';
-import ProductDetail from '../pages/ProductDetail';
+import ProductDetail from '../pages/productDetail';
 import ServiceDetail from '../pages/ServiceDetail';
 import AccountDetails from '../pages/AccountDetails';
 import ServiceStats from '../pages/ServiceStats';
@@ -48,7 +48,7 @@ const router = createBrowserRouter([
       { path: 'mpesaForm', element: <MpesaForm /> },
       
       {
-        element: <ProtectedRoute />,  
+        element: <ProtectedRoute allowedRoles={['User']}/>,  
         children: [
           { path: 'profile', element: <Profile /> },
           { path: 'profile/account', element: <AccountDetails /> },
@@ -58,7 +58,7 @@ const router = createBrowserRouter([
       },
       
       {
-        element: <ProtectedRoute allowedRoles={['admin']} />,
+        element: <ProtectedRoute allowedRoles={['Admin']} />,
         children: [
           { path: 'admin', element: <Admin /> },
           { path: 'admin/stats', element: <AdminStats /> },
