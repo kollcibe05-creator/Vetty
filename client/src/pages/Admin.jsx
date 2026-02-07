@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const Admin = () => {
@@ -12,11 +13,10 @@ const Admin = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/admin/stats', {
-          headers: { Authorization: `Bearer ${token}` }
+        const res = await axios.get('http://localhost:5555/users', {
+          withCredentials: true
         });
-        setStats(res.data);
+        setStats({ total_users: res.data.length, total_admins: res.data.filter(u => u.role === 'admin').length, timestamp: new Date() });
       } catch (err) {
         setError('Failed to load admin stats');
       } finally {
@@ -24,7 +24,7 @@ const Admin = () => {
       }
     };
 
-    if (user?.role === 'admin') {
+    if (user?.role?.name === 'Admin' || user?.role === 'Admin') {
       fetchStats();
     }
   }, [user]);
@@ -35,7 +35,7 @@ const Admin = () => {
   return (
     <div>
       <h2>Admin Dashboard</h2>
-      <p>Logged in as: {user?.username} (Admin)</p>
+      <p>Logged in as: {user?.name || 'Admin'} (Admin)</p>
 
       {stats && (
         <div>
@@ -44,10 +44,10 @@ const Admin = () => {
           <p>Total admins: {stats.total_admins}</p>
           <p>Last updated: {new Date(stats.timestamp).toLocaleString()}</p>
         </div>
-     )}
+      )}
 
       <div>
-        <h2>Management</h2>
+        <h3>Management</h3>
         <ul>
           <li><Link to="/admin/users">Manage Users</Link></li>
           <li><Link to="/admin/products">Manage Products</Link></li>
