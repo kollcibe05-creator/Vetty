@@ -1,315 +1,149 @@
-from config import db, bcrypt, app
-from models import (
-    User, Role, Product, Service, Category, 
-    Cart, CartItem, Order, OrderItem, Payment, 
-    Review, InventoryAlert, DeliveryZone, 
-    OrderStatusHistory, Appointment
-)
 from datetime import datetime, timedelta
-import random
+from app import app
+from models import db, User, Role, Category, Product, Service, DeliveryZone, InventoryAlert, Order, OrderItem, Review, Appointment, Cart, CartItem, Payment, OrderStatusHistory
+from config import bcrypt
 
-def seed_roles():
-    """Create basic roles"""
-    roles = [
-        Role(name="Customer"),
-        Role(name="Admin")
-    ]
-    
-    for role in roles:
-        existing = Role.query.filter_by(name=role.name).first()
-        if not existing:
-            db.session.add(role)
-    
+def seed_data():
+    print("Deleting existing data...")
+    # Clear existing data in reverse order of dependencies
+    db.session.query(OrderItem).delete()
+    db.session.query(OrderStatusHistory).delete()
+    db.session.query(Payment).delete()
+    db.session.query(Order).delete()
+    db.session.query(Appointment).delete()
+    db.session.query(Review).delete()
+    db.session.query(CartItem).delete()
+    db.session.query(Cart).delete()
+    db.session.query(InventoryAlert).delete()
+    db.session.query(Product).delete()
+    db.session.query(Service).delete()
+    db.session.query(Category).delete()
+    db.session.query(DeliveryZone).delete()
+    db.session.query(User).delete()
+    db.session.query(Role).delete()
+
+    print("Creating Roles...")
+    admin_role = Role(name="Admin")
+    customer_role = Role(name="Customer")
+    db.session.add_all([admin_role, customer_role])
     db.session.commit()
-    print("✅ Roles seeded")
 
-def seed_users():
-    """Create demo users"""
-    admin_role = Role.query.filter_by(name="Admin").first()
-    customer_role = Role.query.filter_by(name="User").first()
-    
-    users = [
-        {
-            "username": "admin",
-            "email": "admin@vetty.com",
-            "password": "admin123",
-            "role": admin_role
-        },
-        {
-            "username": "john_doe",
-            "email": "john@example.com",
-            "password": "password123",
-            "role": customer_role
-        },
-        {
-            "username": "jane_smith",
-            "email": "jane@example.com", 
-            "password": "password123",
-            "role": customer_role
-        }
-    ]
-    
-    for user_data in users:
-        existing = User.query.filter_by(email=user_data["email"]).first()
-        if not existing:
-            user = User(
-                username=user_data["username"],
-                email=user_data["email"],
-                role=user_data["role"]
-            )
-            user.password_hash = bcrypt.generate_password_hash(user_data["password"]).decode('utf-8')
-            db.session.add(user)
-    
+    print("Creating Categories...")
+    cat_supplies = Category(name="Pet Supplies", category_type="Product")
+    cat_food = Category(name="Pet Food", category_type="Product")
+    cat_grooming = Category(name="Grooming", category_type="Service")
+    cat_vet = Category(name="Veterinary", category_type="Service")
+    db.session.add_all([cat_supplies, cat_food, cat_grooming, cat_vet])
     db.session.commit()
-    print("✅ Users seeded")
 
-def seed_categories():
-    """Create product and service categories"""
-    categories = [
-        Category(name="Pet Food", description="Nutritional products for pets"),
-        Category(name="Accessories", description="Pet accessories and toys"),
-        Category(name="Grooming", description="Pet grooming supplies"),
-        Category(name="Health", description="Health and wellness products"),
-        Category(name="Training", description="Pet training services"),
-        Category(name="Exercise", description="Exercise and walking services"),
-        Category(name="Veterinary", description="Veterinary services"),
-    ]
-    
-    for category in categories:
-        existing = Category.query.filter_by(name=category.name).first()
-        if not existing:
-            db.session.add(category)
-    
-    db.session.commit()
-    print("✅ Categories seeded")
-
-def seed_products():
-    """Create demo products"""
-    food_category = Category.query.filter_by(name="Pet Food").first()
-    accessories_category = Category.query.filter_by(name="Accessories").first()
-    grooming_category = Category.query.filter_by(name="Grooming").first()
-    
-    products = [
-        {
-            "name": "Premium Dog Food",
-            "description": "High-quality dog food with essential nutrients for adult dogs",
-            "price": 45.99,
-            "stock_quantity": 50,
-            "category": food_category
-        },
-        {
-            "name": "Cat Food Premium",
-            "description": "Nutritious cat food for all life stages",
-            "price": 35.99,
-            "stock_quantity": 30,
-            "category": food_category
-        },
-        {
-            "name": "Pet Carrier",
-            "description": "Comfortable and secure pet carrier for travel",
-            "price": 29.99,
-            "stock_quantity": 15,
-            "category": accessories_category
-        },
-        {
-            "name": "Grooming Kit",
-            "description": "Complete grooming kit for dogs and cats",
-            "price": 25.99,
-            "stock_quantity": 25,
-            "category": grooming_category
-        },
-        {
-            "name": "Pet Toys Set",
-            "description": "Interactive toys for pets",
-            "price": 15.99,
-            "stock_quantity": 40,
-            "category": accessories_category
-        }
-    ]
-    
-    for product_data in products:
-        existing = Product.query.filter_by(name=product_data["name"]).first()
-        if not existing:
-            product = Product(
-                name=product_data["name"],
-                description=product_data["description"],
-                price=product_data["price"],
-                stock_quantity=product_data["stock_quantity"],
-                category=product_data["category"]
-            )
-            db.session.add(product)
-    
-    db.session.commit()
-    print("✅ Products seeded")
-
-def seed_services():
-    """Create demo services"""
-    training_category = Category.query.filter_by(name="Training").first()
-    exercise_category = Category.query.filter_by(name="Exercise").first()
-    veterinary_category = Category.query.filter_by(name="Veterinary").first()
-    
-    services = [
-        {
-            "name": "Pet Training",
-            "description": "Professional training services for dogs of all ages",
-            "price": 45.00,
-            "duration": 60,
-            "category": training_category
-        },
-        {
-            "name": "Pet Walking",
-            "description": "Daily walking service for dogs",
-            "price": 25.00,
-            "duration": 30,
-            "category": exercise_category
-        },
-        {
-            "name": "Grooming Service",
-            "description": "Full grooming service including bath and haircut",
-            "price": 35.00,
-            "duration": 90,
-            "category": grooming_category
-        },
-        {
-            "name": "Veterinary Checkup",
-            "description": "Complete health examination",
-            "price": 75.00,
-            "duration": 45,
-            "category": veterinary_category
-        }
-    ]
-    
-    for service_data in services:
-        existing = Service.query.filter_by(name=service_data["name"]).first()
-        if not existing:
-            service = Service(
-                name=service_data["name"],
-                description=service_data["description"],
-                price=service_data["price"],
-                duration=service_data["duration"],
-                category=service_data["category"]
-            )
-            db.session.add(service)
-    
-    db.session.commit()
-    print("✅ Services seeded")
-
-def seed_inventory_alerts():
-    """Create inventory alerts for products"""
-    products = Product.query.all()
-    
-    for product in products[:3]:  # Create alerts for first 3 products
-        existing = InventoryAlert.query.filter_by(product_id=product.id).first()
-        if not existing:
-            alert = InventoryAlert(
-                product_id=product.id,
-                threshold=random.randint(5, 15)
-            )
-            db.session.add(alert)
-    
-    db.session.commit()
-    print("✅ Inventory alerts seeded")
-
-def seed_delivery_zones():
-    """Create delivery zones"""
+    print("Creating Delivery Zones...")
     zones = [
-        {"zone_name": "Downtown", "delivery_fee": 100},
-        {"zone_name": "Uptown", "delivery_fee": 150},
-        {"zone_name": "Suburbs", "delivery_fee": 200},
-        {"zone_name": "Airport Area", "delivery_fee": 250}
+        DeliveryZone(zone_name="Downtown", delivery_fee=200),
+        DeliveryZone(zone_name="Suburbs", delivery_fee=500),
+        DeliveryZone(zone_name="Outer Rim", delivery_fee=1000),
     ]
-    
-    for zone_data in zones:
-        existing = DeliveryZone.query.filter_by(zone_name=zone_data["zone_name"]).first()
-        if not existing:
-            zone = DeliveryZone(
-                zone_name=zone_data["zone_name"],
-                delivery_fee=zone_data["delivery_fee"]
-            )
-            db.session.add(zone)
+    db.session.add_all(zones)
+
+    print("Creating Users...")
+    admin = User(
+        username="admin_jane",
+        email="admin@vetty.com",
+        role_id=admin_role.id,
+        vetting_status="approved"
+    )
+    admin.password = "admin123"
+
+    customer1 = User(
+        username="mike_petlover",
+        email="mike@gmail.com",
+        role_id=customer_role.id,
+        vetting_status="approved"
+    )
+    customer1.password = "password123"
+
+    db.session.add_all([admin, customer1])
+    db.session.commit()
+
+    print("Creating Products...")
+    p1 = Product(
+        name="Premium Kibble",
+        description="High-protein dry food for active dogs.",
+        image_url="https://images.unsplash.com/photo-1589924691106-073b697596cd?auto=format&fit=crop&q=80&w=400",
+        price=2500,
+        stock_quantity=50,
+        category_id=cat_food.id
+    )
+    p2 = Product(
+        name="Cat Squeaky Toy",
+        description="Interactive mouse toy with organic catnip.",
+        image_url="https://images.unsplash.com/photo-1545249390-6bdfa286032f?auto=format&fit=crop&q=80&w=400",
+        price=450,
+        stock_quantity=100,
+        category_id=cat_supplies.id
+    )
+    db.session.add_all([p1, p2])
+    db.session.commit()
+
+    print("Creating Inventory Alerts...")
+    alert1 = InventoryAlert(product_id=p1.id, threshold=10)
+    db.session.add(alert1)
+
+    print("Creating Services...")
+    s1 = Service(
+        name="Full Grooming Session",
+        description="Includes bath, haircut, and nail trimming.",
+        image_url="https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=400",
+        base_price=3000,
+        category_id=cat_grooming.id
+    )
+    db.session.add(s1)
+    db.session.commit()
+
+    print("Creating Reviews...")
+    r1 = Review(
+        comment="My dog loves this food!",
+        rating=5,
+        user_id=customer1.id,
+        product_id=p1.id
+    )
+    r2 = Review(
+        comment="Great grooming, very gentle.",
+        rating=4,
+        user_id=customer1.id,
+        service_id=s1.id
+    )
+    db.session.add_all([r1, r2])
+
+    print("Creating an Order...")
+    order1 = Order(
+        user_id=customer1.id,
+        delivery_zone_id=zones[0].id,
+        status="Pending"
+    )
+    db.session.add(order1)
+    db.session.flush() # Get order ID
+
+    item1 = OrderItem(
+        order_id=order1.id,
+        product_id=p1.id,
+        quantity=2,
+        unit_price=p1.price
+    )
+    db.session.add(item1)
+
+    print("Creating an Appointment...")
+    appt = Appointment(
+        user_id=customer1.id,
+        service_id=s1.id,
+        appointment_date=datetime.now() + timedelta(days=2),
+        status="Scheduled",
+        total_price=s1.base_price
+    )
+    db.session.add(appt)
     
     db.session.commit()
-    print("✅ Delivery zones seeded")
-
-def seed_reviews():
-    """Create demo reviews"""
-    products = Product.query.all()
-    services = Service.query.all()
-    users = User.query.filter(User.role.has(name="Customer")).all()
-    
-    if not users:
-        print("⚠️ No users found for reviews")
-        return
-    
-    # Create product reviews
-    for product in products[:2]:
-        for user in users[:2]:
-            existing = Review.query.filter_by(
-                product_id=product.id, 
-                user_id=user.id
-            ).first()
-            if not existing:
-                review = Review(
-                    rating=random.randint(4, 5),
-                    comment=f"Great product! Very satisfied with the {product.name.lower()}.",
-                    product_id=product.id,
-                    user_id=user.id
-                )
-                db.session.add(review)
-    
-    # Create service reviews
-    for service in services[:2]:
-        for user in users[:2]:
-            existing = Review.query.filter_by(
-                service_id=service.id,
-                user_id=user.id
-            ).first()
-            if not existing:
-                review = Review(
-                    rating=random.randint(4, 5),
-                    comment=f"Excellent service! The {service.name.lower()} was professional and thorough.",
-                    service_id=service.id,
-                    user_id=user.id
-                )
-                db.session.add(review)
-    
-    db.session.commit()
-    print("✅ Reviews seeded")
-
-def seed_all():
-    """Seed all data"""
-    print("🌱 Starting database seeding...")
-    
-    try:
-        with app.app_context():
-            seed_roles()
-            seed_users()
-            seed_categories()
-            seed_products()
-            seed_services()
-            seed_inventory_alerts()
-            seed_delivery_zones()
-            seed_reviews()
-            
-            print("🎉 Database seeding completed successfully!")
-            print("\n📊 Summary:")
-            print(f"   Roles: {Role.query.count()}")
-            print(f"   Users: {User.query.count()}")
-            print(f"   Categories: {Category.query.count()}")
-            print(f"   Products: {Product.query.count()}")
-            print(f"   Services: {Service.query.count()}")
-            print(f"   Reviews: {Review.query.count()}")
-            print(f"   Inventory Alerts: {InventoryAlert.query.count()}")
-            print(f"   Delivery Zones: {DeliveryZone.query.count()}")
-            
-            print("\n🔑 Login credentials:")
-            print("   Admin: admin@vetty.com / admin123")
-            print("   Customer: john@example.com / password123")
-            print("   Customer: jane@example.com / password123")
-        
-    except Exception as e:
-        print(f"❌ Error during seeding: {e}")
-        raise
+    print("Seeding completed successfully!")
 
 if __name__ == "__main__":
-    seed_all()
+    with app.app_context():
+        seed_data()
