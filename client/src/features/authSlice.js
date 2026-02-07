@@ -12,6 +12,7 @@ export const signup = createAsyncThunk(
     try {
       dispatch(showSpinner({message: "Signing you up..."}))
       await axios.post(`${API_URL}/signup`, userData);
+      dispatch(hideSpinner())
       dispatch(showNotification({
         type: "success",
         title: "successful sign up",
