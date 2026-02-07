@@ -5,10 +5,9 @@ from models import User
 from flask_restful import Resource
 from config import app, db, api, bcrypt
 
-from datetime import datetime
-
-from models import (Product, CartItem, Cart, DeliveryZone, 
-    InventoryAlert, Service, Payment, Order, 
+from models import (
+    Product, CartItem, Cart, DeliveryZone,
+    InventoryAlert, Service, Payment, Order,
     OrderItem, Review, User, Role, OrderStatusHistory,
     Appointment, Category
 )
@@ -17,23 +16,38 @@ from models import (Product, CartItem, Cart, DeliveryZone,
 
 from functools import wraps
 
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        user_id = session.get('user_id')
-        if not user_id:
-            return {"error": "Unauthorized"}, 401
-        user = User.query.get(user_id)
-        if not user or user.role.name != "Admin":
-            return {"error": "Admin access required"}, 403
-        return f(*args, **kwargs)
-    return decorated_function
+def current_user():
+    if "user_id" in session:
+        return User.query.get(session["user_id"])
+    return None
 
-    
+
+def login_required(func):
+    def wrapper(*args, **kwargs):
+        user = current_user()
+        if not user:
+            raise Unauthorized("Login required")
+        return func(*args, **kwargs)
+    return wrapper
+
+
+def admin_required(func):
+    def wrapper(*args, **kwargs):
+        user = current_user()
+        if not user or user.role.name != "admin":
+            raise Unauthorized("Admin access required")
+        return func(*args, **kwargs)
+    return wrapper
+
+
+# =========================
+# AUTH ROUTES
+# =========================
 
 class Signup(Resource):
     def post(self):
         data = request.get_json()
+
         if User.query.filter_by(email=data.get("email")).first():
             return {"error": "Email already registered"}, 400
         try:
@@ -74,26 +88,23 @@ class Login(Resource):
 
 class Logout(Resource):
     def delete(self):
-        session["user_id"] = None
+        session.pop("user_id", None)
         return {}, 204
 
 
 class CheckSession(Resource):
     def get(self):
-        user_id = session.get("user_id") 
-        if user_id:
-            user = db.session.get(User, user_id)
-            if user:
-                return user.to_dict(), 200
-            session["user_id"] = None    
-            
-        return {"error": "Not logged in"}, 401
+        user = current_user()
+        if not user:
+            return {}, 401
+        return user.to_dict(), 200
 
 
+# =========================
+# PRODUCTS
+# =========================
 
-
-class UserList(Resource):
-    @admin_required
+class Products(Resource):
     def get(self):
         users = User.query.all()
         return [{
@@ -424,46 +435,74 @@ class InventoryAlertList(Resource):
 
 class ProductByID(Resource):
     def get(self, id):
-        product = Product.query.filter_by(id=id).first().to_dict()
-        return product, 200
-    @admin_required
-    def patch (self,id):
-        product = Product.query.filter_by(id=id).first()
-        data = request.get_json()
-        for attr in data:
-            setattr(product, attr, data.get(attr))
-        db.session.add(product)    
-        db.session.commit()
-
+        product = Product.query.get(id)
+        if not product:
+            raise NotFound("Product not found")
         return product.to_dict(), 200
-    @admin_required
-    def delete(self, id):
-        product = Product.query.filter_by(id=id).first()
-        db.session.delete(product)
-        db.session.commit()
 
-        return {}, 204
+
+# =========================
+# SERVICES
+# =========================
+
+class Services(Resource):
+    def get(self):
+        return [s.to_dict() for s in Service.query.all()], 200
+
+
 class ServiceByID(Resource):
     def get(self, id):
-        product = Service.query.filter_by(id=id).first().to_dict()
-        return product, 200
-    @admin_required
-    def patch (self,id):
-        service = Service.query.filter_by(id=id).first()
-        data = request.get_json()
-        for attr in data:
-            setattr(service, attr, data.get(attr))
-        db.session.add(service)    
-        db.session.commit()
-
+        service = Service.query.get(id)
+        if not service:
+            raise NotFound("Service not found")
         return service.to_dict(), 200
-    @admin_required
-    def delete(self, id):
-        service = Service.query.filter_by(id=id).first()
-        db.session.delete(service)
-        db.session.commit()
 
-        return {}, 204
+
+# =========================
+# CATEGORIES
+# =========================
+
+class Categories(Resource):
+    def get(self):
+        return [c.to_dict() for c in Category.query.all()], 200
+
+
+# =========================
+# CART
+# =========================
+
+class CartResource(Resource):
+    @login_required
+    def get(self):
+        user = current_user()
+        cart = Cart.query.filter_by(user_id=user.id).first()
+        return cart.to_dict(), 200 if cart else ({}, 200)
+
+
+# =========================
+# ORDERS
+# =========================
+
+class Orders(Resource):
+    @login_required
+    def get(self):
+        user = current_user()
+        orders = Order.query.filter_by(user_id=user.id).all()
+        return [o.to_dict() for o in orders], 200
+
+
+class OrderByID(Resource):
+    @login_required
+    def get(self, id):
+        order = Order.query.get(id)
+        if not order:
+            raise NotFound("Order not found")
+        return order.to_dict(), 200
+
+
+# =========================
+# PAYMENTS
+# =========================
 
 class UserPaymentListByID(Resource):
     @admin_required
@@ -542,7 +581,14 @@ class OrderItemByID(Resource):
         return order_item, 200
 
 
+# =========================
+# ROUTES REGISTRATION
+# =========================
 
+api.add_resource(Signup, "/signup")
+api.add_resource(Login, "/login")
+api.add_resource(Logout, "/logout")
+api.add_resource(CheckSession, "/check_session")
 
 
 #Suleiman innit
@@ -711,12 +757,6 @@ api.add_resource(MpesaPayment, '/payments/mpesa')
 
 
 api.add_resource(ProductByID, "/products/<int:id>")
-api.add_resource(ServiceByID, "/services/<int:id>")
-api.add_resource(UserPaymentListByID, "/payments/<int:id>")
-api.add_resource(DeliveryZoneByID, "/delivery-zones/<int:id>")
-api.add_resource(ApproveAppointment, "/appointments/<int:id>")
-api.add_resource(OrderItems, "/order-items/<int:order_id>")
-api.add_resource(OrderItemByID, "/order-items/<int:id>")  
 
 
 api.add_resource(AdminStats, "/admin/stats")
