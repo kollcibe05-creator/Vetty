@@ -41,7 +41,7 @@ export const login = createAsyncThunk(
       return res.data;
     } catch (err) {
       dispatch(hideSpinner());
-      const errorMessage = err.response?.data?.error || 'Login failed';
+        const errorMessage = err.response?.data?.error || 'Login failed';
 
       dispatch(showNotification({
           type: 'error',

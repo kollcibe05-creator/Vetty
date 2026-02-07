@@ -26,7 +26,7 @@ def seed_roles():
 def seed_users():
     """Create demo users"""
     admin_role = Role.query.filter_by(name="Admin").first()
-    customer_role = Role.query.filter_by(name="Customer").first()
+    customer_role = Role.query.filter_by(name="User").first()
     
     users = [
         {

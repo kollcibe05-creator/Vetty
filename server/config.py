@@ -32,8 +32,9 @@ db.init_app(app)
 bcrypt = Bcrypt(app)
 
 api = Api(app)
-CORS(
-    app,
-    supports_credentials=True,
-    origins=["http://localhost:5173"]
-)
+# CORS(app, 
+#      origins=['http://localhost:5176', 'http://localhost:5173'],
+#      supports_credentials=True,
+#      methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+# )
+CORS(app, supports_credentials=True, origins=["http://localhost:5173"])

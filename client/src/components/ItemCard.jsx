@@ -82,7 +82,7 @@ const ItemCard = ({
         <div className="flex items-baseline justify-between">
           <div className="flex items-baseline">
             <span className="text-2xl font-bold text-gray-900">
-              ${item.price?.toFixed(2) || '0.00'}
+             {isProduct?  `Ksh. ${item.price?.toFixed(2) || '0.00'}` : `Ksh. ${item.base_price?.toFixed(2) || '0.00'}` }
             </span>
             <span className="text-sm text-gray-500 ml-1">
               {isProduct ? '/unit' : '/session'}

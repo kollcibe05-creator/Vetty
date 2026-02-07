@@ -610,11 +610,13 @@ class MpesaPayment(Resource):
             db.session.rollback()
             return {"error": f"Payment initiation failed: {str(e)}"}, 500
 
-class CartResource(Resource):
-    def get(self):
-        user_id = session.get('user_id')
-        if not user_id:
-            return {"error": "Unauthorized"}, 401
+
+# class CartResource(Resource):
+#     def get(self):
+#         user_id = session.get('user_id')
+#         if not user_id:
+#             return {"error": "Unauthorized"}, 401
+
 
 # class CartList(Resource):
 #     def get(self):
@@ -651,7 +653,8 @@ class CartResource(Resource):
 #             db.session.add(cart)
 #             db.session.commit()
         
-        return {"message": "Cart cleared"}, 200
+
+#         return {"message": "Cart cleared"}, 200
 
 class CartItemResource(Resource):
     def patch(self, cart_item_id):
@@ -726,28 +729,43 @@ class PaymentList(Resource):
 
 
 
-class OrderList(Resource):
+# class OrderList(Resource):
 
-    def get(self):
-        user_id = session.get('user_id')
-        if not user_id:
-            return {"error": "Unauthorized"}, 401
+#     def get(self):
+#         user_id = session.get('user_id')
+#         if not user_id:
+#             return {"error": "Unauthorized"}, 401
 
-        user = db.session.get(User, user_id)
-        if user.role.name == "Admin":
-            orders = Order.query.all()
-        else:
-            orders = Order.query.filter_by(user_id=user_id).all()
-        return [o.to_dict() for o in orders], 200
-       
-        try:
-            new_order = Order(user_id=user_id, status="Pending")
-            db.session.add(new_order)
-            db.session.commit()
-            return new_order.to_dict(), 201
-        except Exception as e:
-            db.session.rollback()
-            return {"error": str(e)}, 500
+#         user = db.session.get(User, user_id)
+#         if user.role.name == "Admin":
+#             orders = Order.query.all()
+#         else:
+#             orders = Order.query.filter_by(user_id=user_id).all()
+#         return [o.to_dict() for o in orders], 200
+#     def post(self):
+#         user_id = session.get("user_id")
+#         if not user_id:
+#             return {"error": "Unauthorized"}, 401
+#         data = request.get_json()
+#         items = data.get("items", [])
+#         if not items:
+#             return {"error": "Order cannot be empty"}, 400
+
+#         try:
+#             new_order = Order(user_id=user_id, status="Pending")
+
+#         item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()    
+#         if item:
+#             item.quantity += data.get("quantity", 1)
+#         else:
+#             item = CartItem(
+#                 cart_id=cart.id,
+#                 product_id=product.id,
+#                 quantity=data.get('quantity', 1)
+#             )
+#             db.session.add(item)
+#             db.session.commit()
+            
                 
 
 #         return item.to_dict(), 201
