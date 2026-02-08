@@ -17,7 +17,7 @@ import ServiceDetail from '../pages/ServiceDetail';
 import AccountDetails from '../pages/AccountDetails';
 import ServiceStats from '../pages/ServiceStats';
 import ProductStats from '../pages/ProductStats';
-import AdminDashboard from '../pages/admin/Dashboard';
+import AdminDashboard from '../pages/AdminDashboard';
 import AdminStats from '../pages/admin/ApprovalStats';
 import StockManagement from '../pages/admin/StockManagement';
 import ProductForm from '../pages/admin/ProductForm';
@@ -60,7 +60,7 @@ const router = createBrowserRouter([
       {
         element: <ProtectedRoute allowedRoles={['Admin']} />,
         children: [
-          { path: 'admin', element: <Admin /> },
+          { path: 'admin', element: <AdminDashboard /> },
           { path: 'admin/stats', element: <AdminStats /> },
           { path: 'admin/dashboard', element: <AdminDashboard /> },
           { path: 'admin/stock', element: <StockManagement /> },

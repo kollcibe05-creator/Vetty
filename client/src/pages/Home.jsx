@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { fetchCart } from '../features/cartSlice';
+import { fetchCart, processCheckout } from '../features/cartSlice';
 import { showSpinner, hideSpinner, showNotification, showMpesaModal } from '../features/uiSlice';
 import { selectCart } from '../features/cartSlice';
 
@@ -14,7 +14,7 @@ const Home = () => {
     dispatch(fetchCart());
   }, [dispatch]);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (items.length === 0) {
       dispatch(showNotification({
         type: 'warning',
@@ -24,8 +24,16 @@ const Home = () => {
       return;
     }
     
-    // Navigate to checkout or show M-Pesa modal directly
-    dispatch(showMpesaModal());
+    try {
+      // Process checkout (creates order and updates stock)
+      await dispatch(processCheckout()).unwrap();
+      
+      // After successful checkout, show M-Pesa modal for payment
+      dispatch(showMpesaModal());
+    } catch (error) {
+      // Error is already handled in the thunk
+      console.error('Checkout failed:', error);
+    }
   };
 
   return (
