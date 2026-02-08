@@ -171,7 +171,8 @@ class Order(db.Model, SerializerMixin):
         return value 
     @hybrid_property
     def total_amount(self):
-        return sum(item.subtotal for item in self.order_items)
+        items_total =  sum(item.subtotal for item in self.order_items)
+        return items_total + (self.delivery_zone.delivery_fee if self.delivery_zone else 0)
 
 
 
@@ -244,7 +245,7 @@ class Payment(db.Model, SerializerMixin):
         return value
     @validates("status")
     def validate_payment_status(self, key, value):
-        if value not in ["pending", "success", "fail"]:
+        if value not in ["pending", "success", "failed"]:
             raise ValueError("invalid entry!")
         return value    
     
@@ -313,18 +314,29 @@ class User(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    # 🔒 WRITE-ONLY PASSWORD
     @hybrid_property
     def password(self):
-        return self._password_hash    
+        raise AttributeError("Password is write-only.")
 
     @password.setter
     def password(self, password):
+        if not password or len(password) < 8:
+            raise ValueError("Password must be at least 8 characters long.")
+
         self._password_hash = bcrypt.generate_password_hash(
             password.encode("utf-8")
-        ).decode("utf-8")    
+        ).decode("utf-8")
 
     def check_password(self, password):
-        return bcrypt.check_password_hash(self._password_hash, password.encode("utf-8"))
+        if not self._password_hash:
+            return False
+
+        return bcrypt.check_password_hash(
+            self._password_hash,
+            password.encode("utf-8")
+        )
+
     
     appointments = db.relationship("Appointment", back_populates="user", cascade="all, delete-orphan")
     carts = db.relationship("Cart", back_populates="user", uselist=False)  #added uselist
@@ -359,7 +371,7 @@ class Appointment(db.Model, SerializerMixin):
     user = db.relationship("User", back_populates="appointments")
     service = db.relationship("Service", back_populates="appointments")
     payments = db.relationship("Payment", back_populates="appointment", cascade="all, delete-orphan")
-    service = db.relationship("Service", back_populates="appointments")
+    
 
     serialize_rules = ("-user.appointments", "-service.appointments","-payments.appointment")
     @validates("status")

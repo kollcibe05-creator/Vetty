@@ -12,6 +12,7 @@ export const signup = createAsyncThunk(
     try {
       dispatch(showSpinner({message: "Signing you up..."}))
       await axios.post(`${API_URL}/signup`, userData);
+      dispatch(hideSpinner())
       dispatch(showNotification({
         type: "success",
         title: "successful sign up",
@@ -41,7 +42,7 @@ export const login = createAsyncThunk(
       return res.data;
     } catch (err) {
       dispatch(hideSpinner());
-      const errorMessage = err.response?.data?.error || 'Login failed';
+        const errorMessage = err.response?.data?.error || 'Login failed';
 
       dispatch(showNotification({
           type: 'error',

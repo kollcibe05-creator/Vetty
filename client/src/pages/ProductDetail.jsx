@@ -173,7 +173,7 @@ const ProductDetail = () => {
               <div className="flex items-start justify-between mb-4">
                 <h1 className="text-3xl font-bold text-gray-900 flex-1">{product.name}</h1>
                 <div className="text-right">
-                  <span className="text-3xl font-bold text-blue-600">${product.price?.toFixed(2)}</span>
+                  <span className="text-3xl font-bold text-blue-600">Ksh. {product.price?.toFixed(2)}</span>
                 </div>
               </div>
 
