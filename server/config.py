@@ -32,8 +32,13 @@ db.init_app(app)
 bcrypt = Bcrypt(app)
 
 api = Api(app)
-CORS(
-    app,
-    supports_credentials=True,
-    origins=["http://localhost:5173"]
+
+CORS(app, supports_credentials=True, origins=[
+    "http://localhost:5173", 
+    "https://thallous-nongraduated-doris.ngrok-free.dev"
+])
+
+app.config.update(
+    SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_SECURE=True
 )
