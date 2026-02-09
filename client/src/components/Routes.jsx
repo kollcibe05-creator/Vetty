@@ -21,6 +21,8 @@ import AdminStats from '../pages/admin/ApprovalStats';
 import StockManagement from '../pages/admin/StockManagement';
 import ProductForm from '../pages/admin/ProductForm';
 import ServiceForm from '../pages/admin/ServiceForm';
+import ApprovalStats from '../pages/admin/ApprovalStats';
+import OrderRow from '../pages/admin/OrderRow';
 
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -68,6 +70,8 @@ const router = createBrowserRouter([
           { path: 'admin/stock', element: <StockManagement /> },
           { path: 'admin/product-form', element: <ProductForm /> },
           { path: 'admin/service-form', element: <ServiceForm /> },
+          { path: 'admin/approval-stats', element: <ApprovalStats /> },
+          { path: 'admin/order-row', element: <OrderRow /> },
         ],
       },
 
