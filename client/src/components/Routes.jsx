@@ -1,4 +1,3 @@
-
 import { createBrowserRouter, Outlet, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import Navbar from './Navbar';
@@ -12,7 +11,7 @@ import Home from '../pages/Home';
 import MpesaForm from '../pages/MpesaForm';
 
 const Layout = () => (
-  <div className="min-h-screen flex flex-col">
+  <div className="flex flex-col min-h-screen">
     <Navbar />
     <main className="flex-1">
       <Outlet />
@@ -26,31 +25,29 @@ const router = createBrowserRouter([
     path: '/',
     element: <Layout />,
     children: [
+      
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <Signup /> },
       { path: 'home', element: <Home /> },
       { path: 'mpesaForm', element: <MpesaForm /> },
+
       
       {
-        element: <ProtectedRoute />,  
-        children: [
-          { path: 'profile', element: <Profile /> },
-        ],
+        element: <ProtectedRoute />,
+        children: [{ path: 'profile', element: <Profile /> }],
       },
+
       
       {
-        element: <ProtectedRoute allowedRoles={['admin']} />,
-        children: [
-          { path: 'admin', element: <Admin /> },
-        ],
+        element: <ProtectedRoute allowedRoles={['Admin']} />,
+        children: [{ path: 'admin', element: <Admin /> }],
       },
+
       
-      {
-        path: '',
-        element: <Navigate to="/home" replace />,
-      },
-    
-      { path: '*', element: <div>404 - Page not found</div> },
+      { path: '', element: <Navigate to="/home" replace /> },
+
+      
+      { path: '*', element: <div className="text-center mt-10 text-2xl">404 - Page not found</div> },
     ],
   },
 ]);
