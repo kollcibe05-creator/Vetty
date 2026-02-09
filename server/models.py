@@ -37,10 +37,13 @@ class Product(db.Model, SerializerMixin):
 
     # )
 
-
-
-
-    serialize_rules = ("-reviews.product", "-category.products", "-inventory_alert.product", "-cart_items.product", "-order_items.product", "-reviews", "-cart_items", "-order_items" )  #"-inventory_alert_obj", "-category_name", "threshold"
+    serialize_rules = (
+    "-category.products", 
+    "-inventory_alert", 
+    "-cart_items", 
+    "-order_items", 
+    "-reviews"
+)  #"-inventory_alert_obj", "-category_name", "threshold"
 
 
 class Service(db.Model, SerializerMixin):
