@@ -33,6 +33,7 @@ def admin_required(f):
 class Signup(Resource):
     def post(self):
         data = request.get_json()
+
         if User.query.filter_by(email=data.get("email")).first():
             return {"error": "Email already registered"}, 400
         try:

@@ -6,19 +6,15 @@ import { useNavigate } from 'react-router-dom';
 const Profile = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
+  const { user, isAuthenticated, loading } = useSelector(state => state.auth);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-    } else if (!user) {
-      dispatch(fetchProfile());
-    }
+    if (!isAuthenticated) navigate('/login');
+    else if (!user) dispatch(fetchProfile());
   }, [dispatch, isAuthenticated, user, navigate]);
 
-  if (loading) return <p>Loading profile...</p>;
-  if (!user) return <p>No user data available</p>;
+  if (loading) return <p className="text-center mt-10">Loading profile...</p>;
+  if (!user) return <p className="text-center mt-10">No user data available</p>;
 
   return (
     <div>
