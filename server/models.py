@@ -371,12 +371,17 @@ class Appointment(db.Model, SerializerMixin):
     notes = db.Column(db.Text)
     total_price = db.Column(db.Integer)
 
+    #added
+    delivery_zone_id = db.Column(db.Integer, db.ForeignKey("delivery_zones.id"), nullable=True)
+
     user = db.relationship("User", back_populates="appointments")
     service = db.relationship("Service", back_populates="appointments")
     payments = db.relationship("Payment", back_populates="appointment", cascade="all, delete-orphan")
     
+    #added
+    delivery_zone = db.relationship('DeliveryZone')
 
-    serialize_rules = ("-user.appointments", "-service.appointments","-payments.appointment")
+    serialize_rules = ("-user.appointments", "-service.appointments","-payments.appointment", '-delivery_zone.appointments')
     @validates("status")
     def validate_status(self, key,value):
         if value not in ["Pending", "Approved", "Scheduled", "Completed", "Cancelled", "No-Show"]:
