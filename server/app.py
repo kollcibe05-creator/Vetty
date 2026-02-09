@@ -103,6 +103,39 @@ class ProductList(Resource):
         db.session.commit()
         return new_product.to_dict(), 201
     
+class ProductByID(Resource):
+    def get(self, id):
+        # Fetch the product by ID
+        product = db.session.get(Product, id)
+        if not product:
+            return {"error": "Product not found"}, 404
+        
+        # Return the product as a dictionary
+        return product.to_dict(), 200
+
+    @admin_required
+    def patch(self, id):
+        product = db.session.get(Product, id)
+        if not product:
+            return {"error": "Product not found"}, 404
+            
+        data = request.get_json()
+        for attr in data:
+            setattr(product, attr, data.get(attr))
+            
+        db.session.commit()
+        return product.to_dict(), 200
+
+    @admin_required
+    def delete(self, id):
+        product = db.session.get(Product, id)
+        if not product:
+            return {"error": "Product not found"}, 404
+            
+        db.session.delete(product)
+        db.session.commit()
+        return {}, 204
+     
 class ServiceList(Resource):
     def get(self):
         # Access query parameters
@@ -261,6 +294,34 @@ class AppointmentList(Resource):
         except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 422
+
+
+
+# ... existing imports and classes
+
+class ServiceByID(Resource):
+    def get(self, id):
+        # Use db.session.get() which is the modern SQLAlchemy way
+        service = db.session.get(Service, id)
+        if not service:
+            return {"error": "Service not found"}, 404
+        return service.to_dict(), 200
+class CategoryList(Resource):
+    def get(self):
+        categories = Category.query.all()
+        return [c.to_dict() for c in categories], 200
+
+    @admin_required
+    def post(self):
+        data = request.get_json()
+        new_category = Category(
+            name=data.get('name'),
+            category_type=data.get('category_type')
+        )
+        db.session.add(new_category)
+        db.session.commit()
+        return new_category.to_dict(), 201
+
 
 
 
@@ -435,6 +496,7 @@ api.add_resource(Logout, '/logout')
 api.add_resource(CheckSession, '/check_session')
 api.add_resource(ServiceList, '/services')
 api.add_resource(ProductList, '/products')
+
 api.add_resource(CartResource, '/cart', '/cart-items') # Mapped to both to fix your CORS error
 api.add_resource(Checkout, "/check-out")
 api.add_resource(AppointmentList, '/appointments')
@@ -444,7 +506,8 @@ api.add_resource(MpesaPayment, '/payments/mpesa')
 api.add_resource(MpesaCallback, '/callback')
 api.add_resource(AdminStats, "/admin/stats")
 
-# (Add your other ID-based resources here similarly...)
+api.add_resource(ServiceByID, '/services/<int:id>')
+api.add_resource(CategoryList, '/categories')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
