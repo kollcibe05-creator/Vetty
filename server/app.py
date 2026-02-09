@@ -33,6 +33,7 @@ def admin_required(f):
 class Signup(Resource):
     def post(self):
         data = request.get_json()
+
         if User.query.filter_by(email=data.get("email")).first():
             return {"error": "Email already registered"}, 400
         try:
@@ -296,6 +297,34 @@ class AppointmentList(Resource):
 
 
 
+# ... existing imports and classes
+
+class ServiceByID(Resource):
+    def get(self, id):
+        # Use db.session.get() which is the modern SQLAlchemy way
+        service = db.session.get(Service, id)
+        if not service:
+            return {"error": "Service not found"}, 404
+        return service.to_dict(), 200
+class CategoryList(Resource):
+    def get(self):
+        categories = Category.query.all()
+        return [c.to_dict() for c in categories], 200
+
+    @admin_required
+    def post(self):
+        data = request.get_json()
+        new_category = Category(
+            name=data.get('name'),
+            category_type=data.get('category_type')
+        )
+        db.session.add(new_category)
+        db.session.commit()
+        return new_category.to_dict(), 201
+
+
+
+
 
 class AdminAppointmentResource(Resource):
     @admin_required
@@ -477,8 +506,8 @@ api.add_resource(MpesaPayment, '/payments/mpesa')
 api.add_resource(MpesaCallback, '/callback')
 api.add_resource(AdminStats, "/admin/stats")
 
-# (Add your other ID-based resources here similarly...)
-api.add_resource(ProductByID, '/products/<int:id>')
+api.add_resource(ServiceByID, '/services/<int:id>')
+api.add_resource(CategoryList, '/categories')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

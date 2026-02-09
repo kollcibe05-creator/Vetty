@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchServiceById } from '../features/serviceSlice';
-import { selectCurrentService, selectServiceLoading } from '../features/serviceSlice';
+import { fetchServiceById, fetchServices, createAppointment } from '../features/serviceSlice';
+import { selectCurrentService, selectServiceLoading, selectServices } from '../features/serviceSlice';
 import { showNotification } from '../features/uiSlice';
 import ItemCard from '../components/ItemCard';
 
@@ -10,22 +10,33 @@ const ServiceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
+
+  const {items} = useSelector(selectServices)
   const service = useSelector(selectCurrentService);
   const isLoading = useSelector(selectServiceLoading);
+  const {isAuthenticated} = useSelector((state) => state.auth)
+
+  const [isBooking, setIsBooking] = useState(false)
+  
+const [bookingDate, setBookingDate] = useState('');
+const [notes, setNotes] = useState('');
+  
 
   useEffect(() => {
     if (id) {
       dispatch(fetchServiceById(id));
+      if(items.length === 0){
+        dispatch(fetchServices())
+      }
     }
-  }, [dispatch, id]);
+  }, [dispatch, id, items.length]);
 
   const handleBookNow = () => {
-    dispatch(showNotification({
-      type: 'info',
-      title: 'Booking Feature',
-      message: 'Service booking functionality coming soon!',
-    }));
+    if (!isAuthenticated) {
+      dispatch(showNotification({type: 'error', message: 'Please login to book'}))
+      return 
+    }
+    setIsBooking(true)
   };
 
   if (isLoading) {
@@ -52,12 +63,30 @@ const ServiceDetail = () => {
     );
   }
 
-  // Mock related services
-  const relatedServices = [
-    { id: 2, name: 'Pet Walking', price: 25.00, category: { name: 'Exercise' } },
-    { id: 3, name: 'Pet Training', price: 45.00, category: { name: 'Training' } },
-    { id: 4, name: 'Grooming Service', price: 35.00, category: { name: 'Grooming' } },
-  ];
+  const submitBooking = async () => {
+    if (!bookingDate) {
+      dispatch(showNotification({type: 'error', message: 'Please select a date and time'}) )
+      return
+    }
+    const result = await dispatch(createAppointment({
+        service_id: service.id,
+        appointment_date: bookingDate,
+        total_price: service.price || 0,
+        notes
+    }));
+    if (createAppointment.fulfilled.match(result)) {
+      setIsBooking(false)
+      setBookingDate('')
+      setNotes('')
+    }
+  }
+
+
+  const relatedServices = items
+    .filter(item => item.category?.name == service.category?.name && item.id !== service?.id)
+    // .slice(0, 4);
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -101,7 +130,7 @@ const ServiceDetail = () => {
               <div className="flex items-start justify-between mb-4">
                 <h1 className="text-3xl font-bold text-gray-900 flex-1">{service.name}</h1>
                 <div className="text-right">
-                  <span className="text-3xl font-bold text-blue-600">${service.price?.toFixed(2)}</span>
+                  <span className="text-3xl font-bold text-blue-600">Ksh. {service.base_price?.toFixed(2)}</span>
                   <span className="text-sm text-gray-500 ml-1">/session</span>
                 </div>
               </div>
@@ -130,6 +159,12 @@ const ServiceDetail = () => {
               >
                 Book Now
               </button>
+              {/* {isBooking && (
+                <BookingModal 
+                  service={service}
+                  onClose={() => setIsBooking(false))
+                />
+              )} */}
             </div>
           </div>
         </div>
@@ -146,6 +181,33 @@ const ServiceDetail = () => {
               />
             ))}
           </div>
+          {isBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <h2 className="text-xl font-bold mb-4">Book {service.name}</h2>
+            
+            <label className="block text-sm font-medium mb-1">Select Date & Time</label>
+            <input 
+              type="datetime-local" 
+              className="w-full border rounded-lg p-2 mb-4"
+              value={bookingDate}
+              onChange={(e) => setBookingDate(e.target.value)}
+            />
+
+            <label className="block text-sm font-medium mb-1">Notes</label>
+            <textarea 
+              className="w-full border rounded-lg p-2 mb-4"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+
+            <div className="flex gap-3">
+              <button onClick={submitBooking} className="flex-1 bg-blue-600 text-white py-2 rounded-lg">Confirm</button>
+              <button onClick={() => setIsBooking(false)} className="flex-1 bg-gray-200 py-2 rounded-lg">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
         </div>
       </div>
     </div>

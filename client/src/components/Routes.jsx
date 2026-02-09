@@ -1,4 +1,3 @@
-
 import { createBrowserRouter, Outlet, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import Navbar from './Navbar';
@@ -22,9 +21,11 @@ import AdminStats from '../pages/admin/ApprovalStats';
 import StockManagement from '../pages/admin/StockManagement';
 import ProductForm from '../pages/admin/ProductForm';
 import ServiceForm from '../pages/admin/ServiceForm';
+import ApprovalStats from '../pages/admin/ApprovalStats';
+import OrderRow from '../pages/admin/OrderRow';
 
 const Layout = () => (
-  <div className="min-h-screen flex flex-col">
+  <div className="flex flex-col min-h-screen">
     <Navbar />
     <main className="flex-1">
       <Outlet />
@@ -38,6 +39,7 @@ const router = createBrowserRouter([
     path: '/',
     element: <Layout />,
     children: [
+      
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <Signup /> },
       { path: 'home', element: <Home /> },
@@ -46,6 +48,7 @@ const router = createBrowserRouter([
       { path: 'services', element: <Services /> },
       { path: 'services/:id', element: <ServiceDetail /> },
       { path: 'mpesaForm', element: <MpesaForm /> },
+
       
       {
         element: <ProtectedRoute allowedRoles={['User']}/>,  
@@ -56,6 +59,7 @@ const router = createBrowserRouter([
           { path: 'profile/product-stats', element: <ProductStats /> },
         ],
       },
+
       
       {
         element: <ProtectedRoute allowedRoles={['Admin']} />,
@@ -66,15 +70,16 @@ const router = createBrowserRouter([
           { path: 'admin/stock', element: <StockManagement /> },
           { path: 'admin/product-form', element: <ProductForm /> },
           { path: 'admin/service-form', element: <ServiceForm /> },
+          { path: 'admin/approval-stats', element: <ApprovalStats /> },
+          { path: 'admin/order-row', element: <OrderRow /> },
         ],
       },
+
       
-      {
-        path: '',
-        element: <Navigate to="/home" replace />,
-      },
-    
-      { path: '*', element: <div>404 - Page not found</div> },
+      { path: '', element: <Navigate to="/home" replace /> },
+
+      
+      { path: '*', element: <div className="text-center mt-10 text-2xl">404 - Page not found</div> },
     ],
   },
 ]);
