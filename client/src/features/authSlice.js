@@ -1,14 +1,23 @@
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import axios from 'axios';
+import { showSpinner, hideSpinner, showNotification } from './uiSlice';
 
 const API_URL = 'http://localhost:5555'; 
 
 export const signup = createAsyncThunk(
   'auth/signup',
-  async (userData, { rejectWithValue }) => {
+  async (userData, {dispatch,  rejectWithValue }) => {
     try {
+      dispatch(showSpinner({message: "Signing you up..."}))
       await axios.post(`${API_URL}/signup`, userData);
+      dispatch(hideSpinner())
+      dispatch(showNotification({
+        type: "success",
+        title: "successful sign up",
+        message: "welcome to the pack!"
+      }))
       return { success: true };
     } catch (err) {
       return rejectWithValue(err.response?.data?.msg || 'Signup failed');
@@ -18,14 +27,48 @@ export const signup = createAsyncThunk(
 
 export const login = createAsyncThunk(
   'auth/login',
-  async (credentials, { rejectWithValue }) => {
+  async (credentials, { dispatch, rejectWithValue }) => {
     try {
+      dispatch(showSpinner({message: "Logging you in..."}))
       const res = await axios.post(`${API_URL}/login`, credentials, {
         withCredentials: true // Important for session cookies
       });
+      dispatch(hideSpinner())
+      dispatch(showNotification({
+          type: "success",
+          title: "Welcome",
+          message: "Enjoy our products and services!"
+      }))
       return res.data;
     } catch (err) {
+      dispatch(hideSpinner());
+        const errorMessage = err.response?.data?.error || 'Login failed';
+
+      dispatch(showNotification({
+          type: 'error',
+          title: 'Login Error',
+          message: errorMessage
+        }));
       return rejectWithValue(err.response?.data?.error || 'Login failed');
+    }
+  }
+);
+
+export const logout = createAsyncThunk(
+  'auth/logout',
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      await axios.delete(`${API_URL}/logout`, {
+        withCredentials: true // Important for session cookies
+      });
+      dispatch(showNotification({
+        type: "success",
+        title: "Logged out",
+        message: "You have been logged out successfully"
+      }));
+      return { success: true };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || 'Logout failed');
     }
   }
 );
@@ -53,7 +96,7 @@ const authSlice = createSlice({
     error: null,
   },
   reducers: {
-    logout: (state) => {
+    clearAuth: (state) => {
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
@@ -63,6 +106,7 @@ const authSlice = createSlice({
     
     builder.addCase(login.pending, (state) => {
       state.loading = true;
+
       state.error = null;
     });
     builder.addCase(login.fulfilled, (state, action) => {
@@ -89,8 +133,22 @@ const authSlice = createSlice({
       state.error = action.payload;
       state.isAuthenticated = false;
     });
+
+    builder.addCase(logout.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(logout.fulfilled, (state) => {
+      state.loading = false;
+      state.user = null;
+      state.isAuthenticated = false;
+      state.error = null;
+    });
+    builder.addCase(logout.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    });
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { clearAuth } = authSlice.actions;
 export default authSlice.reducer;

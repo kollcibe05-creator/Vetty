@@ -19,17 +19,13 @@ load_dotenv()
 # =========================
 app = Flask(__name__)
 
-app.secret_key = os.getenv(
-    "SECRET_KEY",
-    "dev-secret-key-change-me"
-)
+# app.secret_key = os.getenv('SECRET_KEY')
+app.secret_key = os.getenv('SECRET_KEY')
+app.secret_key = b'\xf2\x9e\xa7\xea+b]\xe04\xfd\xcd?a_\xf4:'
 
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///app.db"
-)
 
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///app.db"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
 # =========================
@@ -53,8 +49,13 @@ bcrypt = Bcrypt(app)
 
 api = Api(app)
 
-CORS(
-    app,
-    supports_credentials=True,
-    origins=["http://localhost:5173"]
+CORS(app, supports_credentials=True, origins=[
+    "http://localhost:5173", 
+    "http://127.0.0.1:5173",
+    "https://thallous-nongraduated-doris.ngrok-free.dev"
+])
+
+app.config.update(
+    SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_SECURE=True
 )

@@ -9,6 +9,18 @@ import Profile from '../pages/Profile';
 import Admin from '../pages/Admin';
 import Home from '../pages/Home';
 import MpesaForm from '../pages/MpesaForm';
+import Products from '../pages/Products';
+import Services from '../pages/Services';
+import ProductDetail from '../pages/ProductDetail';
+import ServiceDetail from '../pages/ServiceDetail';
+import AccountDetails from '../pages/AccountDetails';
+import ServiceStats from '../pages/ServiceStats';
+import ProductStats from '../pages/ProductStats';
+import AdminDashboard from '../pages/AdminDashboard';
+import AdminStats from '../pages/admin/ApprovalStats';
+import StockManagement from '../pages/admin/StockManagement';
+import ProductForm from '../pages/admin/ProductForm';
+import ServiceForm from '../pages/admin/ServiceForm';
 
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -29,18 +41,34 @@ const router = createBrowserRouter([
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <Signup /> },
       { path: 'home', element: <Home /> },
+      { path: 'products', element: <Products /> },
+      { path: 'products/:id', element: <ProductDetail /> },
+      { path: 'services', element: <Services /> },
+      { path: 'services/:id', element: <ServiceDetail /> },
       { path: 'mpesaForm', element: <MpesaForm /> },
 
       
       {
-        element: <ProtectedRoute />,
-        children: [{ path: 'profile', element: <Profile /> }],
+        element: <ProtectedRoute allowedRoles={['User']}/>,  
+        children: [
+          { path: 'profile', element: <Profile /> },
+          { path: 'profile/account', element: <AccountDetails /> },
+          { path: 'profile/service-stats', element: <ServiceStats /> },
+          { path: 'profile/product-stats', element: <ProductStats /> },
+        ],
       },
 
       
       {
         element: <ProtectedRoute allowedRoles={['Admin']} />,
-        children: [{ path: 'admin', element: <Admin /> }],
+        children: [
+          { path: 'admin', element: <AdminDashboard /> },
+          { path: 'admin/stats', element: <AdminStats /> },
+          { path: 'admin/dashboard', element: <AdminDashboard /> },
+          { path: 'admin/stock', element: <StockManagement /> },
+          { path: 'admin/product-form', element: <ProductForm /> },
+          { path: 'admin/service-form', element: <ServiceForm /> },
+        ],
       },
 
       

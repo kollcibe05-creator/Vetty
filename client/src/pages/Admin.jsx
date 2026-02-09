@@ -12,11 +12,8 @@ const Admin = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/users', { withCredentials: true });
-        setStats({
-          total_users: res.data.length,
-          total_admins: res.data.filter(u => u.role === 'admin').length,
-          timestamp: new Date(),
+        const res = await axios.get('http://localhost:5555/users', {
+          withCredentials: true
         });
       } catch (err) {
         setError('Failed to load admin stats');
@@ -25,16 +22,18 @@ const Admin = () => {
       }
     };
 
-    if (user?.role === 'Admin') fetchStats();
+    if (user?.role?.name === 'Admin' || user?.role === 'Admin') {
+      fetchStats();
+    }
   }, [user]);
 
   if (loading) return <p className="text-center mt-10">Loading admin dashboard...</p>;
   if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-3xl font-bold mb-4">Admin Dashboard</h2>
-      <p className="mb-6">Logged in as: <strong>{user?.username}</strong> (Admin)</p>
+    <div>
+      <h2>Admin Dashboard</h2>
+      <p>Logged in as: {user?.name || 'Admin'} (Admin)</p>
 
       {stats && (
         <div className="mb-6">
