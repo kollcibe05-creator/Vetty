@@ -508,6 +508,7 @@ api.add_resource(AdminStats, "/admin/stats")
 
 api.add_resource(ServiceByID, '/services/<int:id>')
 api.add_resource(CategoryList, '/categories')
+api.add_resource(ProductByID, '/products/<int:id>')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
