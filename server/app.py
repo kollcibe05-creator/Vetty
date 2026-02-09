@@ -33,6 +33,7 @@ def admin_required(f):
 class Signup(Resource):
     def post(self):
         data = request.get_json()
+
         if User.query.filter_by(email=data.get("email")).first():
             return {"error": "Email already registered"}, 400
         try:
@@ -507,6 +508,7 @@ api.add_resource(AdminStats, "/admin/stats")
 
 api.add_resource(ServiceByID, '/services/<int:id>')
 api.add_resource(CategoryList, '/categories')
+api.add_resource(ProductByID, '/products/<int:id>')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
