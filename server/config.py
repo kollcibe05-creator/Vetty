@@ -35,7 +35,7 @@ api = Api(app)
 
 CORS(app, supports_credentials=True, origins=[
     "http://localhost:5173", 
-    "https://thallous-nongraduated-doris.ngrok-free.dev"
+
 ])
 
 app.config.update(
