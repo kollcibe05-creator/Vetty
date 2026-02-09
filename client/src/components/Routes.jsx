@@ -12,7 +12,7 @@ import Home from '../pages/Home';
 import MpesaForm from '../pages/MpesaForm';
 import Products from '../pages/Products';
 import Services from '../pages/Services';
-import ProductDetail from '../pages/productDetail';
+import ProductDetail from '../pages/ProductDetail';
 import ServiceDetail from '../pages/ServiceDetail';
 import AccountDetails from '../pages/AccountDetails';
 import ServiceStats from '../pages/ServiceStats';
