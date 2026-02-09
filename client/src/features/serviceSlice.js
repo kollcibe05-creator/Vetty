@@ -6,27 +6,61 @@ import { hideSpinner, showNotification, showSpinner } from "./uiSlice"
 
 const API_URL = 'http://localhost:5555';
 
-// Async thunks for service operations
+// // Async thunks for service operations
+// export const fetchServices = createAsyncThunk(
+//   'services/fetchServices',
+//   async (params = {}, { dispatch, rejectWithValue }) => {
+//     try {
+//       dispatch(showSpinner({message: "Loading services..."}));
+//       const res = await axios.get(`${API_URL}/services`, { params });
+//       dispatch(hideSpinner());
+//       return res.data;
+//     } catch (err) {
+//       dispatch(hideSpinner());
+//       dispatch(showNotification({
+//         type: 'error',
+//         title: 'Fetch Error',
+//         message: 'Failed to fetch services'
+//       }));
+//       return rejectWithValue(err.response?.data?.error || 'Failed to fetch services');
+//     }
+//   }
+// );
+
 export const fetchServices = createAsyncThunk(
   'services/fetchServices',
-  async (params = {}, { dispatch, rejectWithValue }) => {
+  async (filters = {}, { dispatch, rejectWithValue }) => {
     try {
-      dispatch(showSpinner({message: "Loading services..."}));
+      dispatch(showSpinner({ message: "Loading services..." }));
+
+      // Create a clean params object
+      const params = {};
+      
+      // Only add parameters if they have a value
+      if (filters.category && filters.category !== "") {
+        params.category = filters.category;
+      }
+      if (filters.search && filters.search !== "") {
+        params.search = filters.search;
+      }
+      
+      // Map frontend 'sortBy' to backend 'sort_by' (common Flask naming convention)
+      if (filters.sortBy) {
+        params.sort_by = filters.sortBy;
+      }
+      if (filters.sortOrder) {
+        params.sort_order = filters.sortOrder;
+      }
+
       const res = await axios.get(`${API_URL}/services`, { params });
       dispatch(hideSpinner());
       return res.data;
     } catch (err) {
       dispatch(hideSpinner());
-      dispatch(showNotification({
-        type: 'error',
-        title: 'Fetch Error',
-        message: 'Failed to fetch services'
-      }));
-      return rejectWithValue(err.response?.data?.error || 'Failed to fetch services');
+      return rejectWithValue(err.response?.data?.error || 'Server Error');
     }
   }
 );
-
 export const fetchServiceById = createAsyncThunk(
   'services/fetchServiceById',
   async (serviceId, { dispatch, rejectWithValue }) => {
@@ -152,6 +186,64 @@ export const postService = createAsyncThunk(
     }
     
 )
+
+export const createAppointment = createAsyncThunk(
+  'services/createAppointment',
+  async (bookingData, { dispatch, rejectWithValue }) => {
+    try {
+      const res = await axios.post(`${API_URL}/appointments`, bookingData, {
+        withCredentials: true 
+      });
+      dispatch(showNotification({ type: 'success', message: 'Booked successfully!' }));
+      return res.data;
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Booking failed';
+      dispatch(showNotification({ type: 'error', message: msg }));
+      return rejectWithValue(msg);
+    }
+  }
+);
+
+  // const submitBooking = async () => {
+  //   if (!bookingDate) {
+  //     dispatch(showNotification({ type: 'error', message: 'Please select a date' }));
+  //     return;
+  //   }
+
+  //   // Validate that we have a valid datetime-local value
+  //   const dateObj = new Date(bookingDate);
+  //   if (isNaN(dateObj.getTime())) {
+  //     dispatch(showNotification({ type: 'error', message: 'Invalid date format' }));
+  //     return;
+  //   }
+
+  //   try {
+  //     const response = await fetch('http://localhost:5555/appointments', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({
+  //         service_id: selectedService.id,
+  //         appointment_date: bookingDate,
+  //         total_price: selectedService.base_price || 0,
+  //         notes: notes
+  //       }),
+  //       credentials: 'include'
+  //     });
+
+  //     if (response.ok) {
+  //       dispatch(showNotification({ type: 'success', message: 'Appointment booked successfully!' }));
+  //       setSelectedService(null); // Close form
+  //       setBookingDate('');
+  //       setNotes('');
+  //     } else {
+  //       const err = await response.json();
+  //       dispatch(showNotification({ type: 'error', message: err.error }));
+  //     }
+  //   } catch (error) {
+  //     dispatch(showNotification({ type: 'error', message: 'Server error. Try again later.' }));
+  //   }
+  // };
+
 
 
 
@@ -291,6 +383,18 @@ const serviceSlice = createSlice({
             state.items = [...state.items, action.payload]
       })
       .addCase(postService.rejected, (state, action) => {
+            state.loading = false
+            state.error = action.payload
+      })
+      .addCase(createAppointment.pending, (state) => {
+            state.loading = true
+            state.error = null
+      })
+      .addCase(createAppointment.fulfilled, (state, action) => {
+            state.loading = false
+            state.appointments.push(action.payload)
+      })
+      .addCase(createAppointment.rejected, (state, action) => {
             state.loading = false
             state.error = action.payload
       });
