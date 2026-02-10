@@ -363,6 +363,27 @@ class DeliveryZoneList(Resource):
         db.session.commit()
         return new_zone.to_dict(), 201
 
+# --- USER HISTORY RESOURCES ---
+
+class UserOrders(Resource):
+    def get(self):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+        
+        orders = Order.query.filter_by(user_id=user_id).order_by(Order.created_at.desc()).all()
+        return [o.to_dict() for o in orders], 200
+
+class UserAppointments(Resource):
+    def get(self):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+        
+        # This shows the status (Scheduled, Completed, Cancelled)
+        appointments = Appointment.query.filter_by(user_id=user_id).order_by(Appointment.appointment_date.desc()).all()
+        return [a.to_dict() for a in appointments], 200
+
 
 
 class AdminAppointmentResource(Resource):
@@ -549,6 +570,10 @@ api.add_resource(ServiceByID, '/services/<int:id>')
 api.add_resource(CategoryList, '/categories')
 api.add_resource(ProductByID, '/products/<int:id>')
 api.add_resource(DeliveryZoneList, '/delivery-zones')
+
+
+api.add_resource(UserOrders, '/my-orders')
+api.add_resource(UserAppointments, '/my-appointments')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
