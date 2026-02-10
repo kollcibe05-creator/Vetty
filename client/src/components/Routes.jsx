@@ -5,6 +5,7 @@ import Footer from './Footer';
 
 import Login from '../pages/Login';
 import Signup from '../pages/Signup';
+import SellerSignup from '../pages/SellerSignup';
 import Profile from '../pages/Profile';
 import Admin from '../pages/Admin';
 import Home from '../pages/Home';
@@ -22,7 +23,11 @@ import StockManagement from '../pages/admin/StockManagement';
 import ProductForm from '../pages/admin/ProductForm';
 import ServiceForm from '../pages/admin/ServiceForm';
 import ApprovalStats from '../pages/admin/ApprovalStats';
+import UserDashboard from '../pages/UserDashboard';
+import DashboardOverview from '../pages/admin/DashboardOverview';
 import OrderRow from '../pages/admin/OrderRow';
+import TestAdmin from '../pages/admin/TestAdmin';
+import DebugAuth from '../pages/DebugAuth';
 
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -42,6 +47,7 @@ const router = createBrowserRouter([
       
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <Signup /> },
+      { path: 'seller-signup', element: <SellerSignup /> },
       { path: 'home', element: <Home /> },
       { path: 'products', element: <Products /> },
       { path: 'products/:id', element: <ProductDetail /> },
@@ -57,6 +63,7 @@ const router = createBrowserRouter([
           { path: 'profile/account', element: <AccountDetails /> },
           { path: 'profile/service-stats', element: <ServiceStats /> },
           { path: 'profile/product-stats', element: <ProductStats /> },
+          { path: 'dashboard', element: <UserDashboard /> },
         ],
       },
 
@@ -64,9 +71,10 @@ const router = createBrowserRouter([
       {
         element: <ProtectedRoute allowedRoles={['Admin']} />,
         children: [
-          { path: 'admin', element: <AdminDashboard /> },
-          { path: 'admin/stats', element: <AdminStats /> },
+          { path: 'admin', element: <DashboardOverview /> },
+          { path: 'admin/test', element: <TestAdmin /> },
           { path: 'admin/dashboard', element: <AdminDashboard /> },
+          { path: 'admin/stats', element: <AdminStats /> },
           { path: 'admin/stock', element: <StockManagement /> },
           { path: 'admin/product-form', element: <ProductForm /> },
           { path: 'admin/service-form', element: <ServiceForm /> },
@@ -76,6 +84,7 @@ const router = createBrowserRouter([
       },
 
       
+      { path: 'debug', element: <DebugAuth /> },
       { path: '', element: <Navigate to="/home" replace /> },
 
       

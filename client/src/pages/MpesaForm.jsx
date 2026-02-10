@@ -105,7 +105,7 @@ const MpesaForm = () => {
 
             <button
               type="submit"
-              disabled={items.length === 0}
+              disabled={!items || items.length === 0}
               className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-95 disabled:bg-gray-400"
             >
               Pay KES {totalAmount} Now

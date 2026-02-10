@@ -4,7 +4,7 @@ import axios from 'axios';
 import { hideSpinner, showNotification, showSpinner } from "./uiSlice"
 
 
-const API_URL = 'http://localhost:5555';
+const API_URL = 'http://127.0.0.1:5555';
 
 // // Async thunks for service operations
 // export const fetchServices = createAsyncThunk(
