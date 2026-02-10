@@ -313,6 +313,8 @@ class User(db.Model, SerializerMixin):
     _password_hash = db.Column(db.String(255), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
     vetting_status = db.Column(db.String(20), default='not_started')  # not_started, pending, approved, rejected
+    business_name = db.Column(db.String(200), nullable=True)
+    business_description = db.Column(db.Text, nullable=True)
 
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
