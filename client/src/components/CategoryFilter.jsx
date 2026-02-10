@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
-function CategoryFilter({ category_type, onSelectedCategory }) {
-    const activeCategory = useSelector(state => state.services.filters.category);
+function CategoryFilter({ category_type, onSelectedCategory, activeCategory }) {
     const [categories, setCategories] = useState([]);
 
     useEffect(() => {

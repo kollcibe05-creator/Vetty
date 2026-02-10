@@ -1,172 +1,112 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchProducts, setFilters, searchProducts } from '../features/productSlice';
-import { selectProducts, selectProductFilters, selectProductLoading } from '../features/productSlice';
+import { fetchProducts, setFilters, searchProducts, selectProducts, selectProductLoading } from '../features/productSlice';
 import { showSpinner, hideSpinner, showNotification } from '../features/uiSlice';
 import ItemCard from '../components/ItemCard';
 import { addToCart } from '../features/cartSlice';
+import CategoryFilter from '../components/CategoryFilter';
+
 
 const Products = () => {
   const dispatch = useDispatch();
-  const { items, loading, filters } = useSelector(selectProducts);
+  const { items, filters } = useSelector(selectProducts);
   const isLoading = useSelector(selectProductLoading);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // Fetch products on mount and when filters change
-  useEffect(() => {
-    dispatch(fetchProducts(filters));
-  }, [dispatch, filters]);
-
-  // Debounced search
+  // 1. Fetch products when filters change
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (debouncedSearch.trim()) {
-        dispatch(searchProducts(debouncedSearch));
-      }
-    }, 500);
-
+        dispatch(fetchProducts(filters));
+    }, 400);
     return () => clearTimeout(timer);
-  }, [debouncedSearch, dispatch]);
+  }, [dispatch, filters]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
-    setDebouncedSearch(value);
+    dispatch(setFilters({ search: value }));
   };
 
-  const handleCategoryChange = (category) => {
-    dispatch(setFilters({ category }));
-  };
-
-  const handleSortChange = (sortBy) => {
-    dispatch(setFilters({ sortBy }));
+  // 2. Updated handler to match the reusable CategoryFilter prop
+  const handleCategoryChange = (categoryName) => {
+    dispatch(setFilters({ category: categoryName }));
   };
 
   const handleAddToCart = (product) => {
     dispatch(addToCart({ productId: product.id, quantity: 1 }));
   };
 
-  const categories = [...new Set(items.map(item => item.category?.name).filter(Boolean))];
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-            
-            {/* Search Bar */}
-            <div className="relative flex-1 max-w-md">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 7 0 0114 0z"></path>
-                </svg>
-              </div>
-            </div>
-          </div>
+      {/* Header & Search */}
+      <div className="mb-10 text-center pt-10">
+        <h1 className="text-4xl font-extrabold text-gray-900 mb-4">Shop Products</h1>
+        <p className="text-gray-600 max-w-2xl mx-auto mb-8">
+          Quality supplies delivered to your door.
+        </p>
+        
+        <div className="relative max-w-md mx-auto px-4">
+          <input 
+            type="text"
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="w-full pl-12 pr-4 py-3 rounded-2xl border-none bg-white shadow-md focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+          <svg className="absolute left-8 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-wrap gap-4 items-center">
-            {/* Category Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Category:</span>
-              <select
-                value={filters.category || ''}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">All Categories</option>
-                {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sort */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Sort by:</span>
-              <select
-                value={filters.sortBy || 'name'}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="name">Name</option>
-                <option value="price">Price</option>
-                <option value="created_at">Newest</option>
-              </select>
-            </div>
+      {/* REUSABLE CATEGORY FILTER SECTION */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-gray-200 pb-4">
+          <CategoryFilter 
+            category_type="Product" 
+            activeCategory={filters.category} 
+            onSelectedCategory={handleCategoryChange} 
+          />
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-500">Sort:</span>
+            <select 
+              className="bg-transparent text-sm font-medium text-gray-600 outline-none cursor-pointer"
+              onChange={(e) => dispatch(setFilters({ sortBy: e.target.value }))}
+              value={filters.sortBy}
+            >
+              <option value="name">Name</option>
+              <option value="price">Price</option>
+              <option value="created_at">Newest</option>
+            </select>
           </div>
         </div>
       </div>
-
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      )}
 
       {/* Products Grid */}
-      {!isLoading && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {items.length === 0 ? (
-            <div className="text-center py-12">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0l-4 4m4 4v3a2 2 0 002 2H6a2 2 0 002-2v-3m0 4l-4-4"></path>
-              </svg>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">No products found</h3>
-              <p className="mt-2 text-gray-600">Try adjusting your search or filters</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
-              {items.map((product, index) => (
-                <div
-                  key={product.id}
-                  className="transform transition-all duration-500"
-                  style={{
-                    animationDelay: `${index * 100}ms`,
-                    animation: 'fade-in 0.5s ease-out forwards'
-                  }}
-                >
-                  <ItemCard
-                    item={product}
-                    type="product"
-                    onAddToCart={handleAddToCart}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Fade-in animation styles */}
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            No products found matching your criteria.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {items.map((product) => (
+              <ItemCard
+                key={product.id}
+                item={product}
+                type="product"
+                onAddToCart={() => handleAddToCart(product)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

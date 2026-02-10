@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchServices, setFilters, searchServices } from '../features/serviceSlice';
 import { selectServices, selectServiceLoading, createAppointment } from '../features/serviceSlice';
@@ -7,6 +9,7 @@ import ItemCard from '../components/ItemCard';
 import CategoryFilter from '../components/CategoryFilter';
 
 const Services = () => {
+  const navigate = useNavigate()
   const dispatch = useDispatch();
   const { items, filters } = useSelector(selectServices);
   const isLoading = useSelector(selectServiceLoading);
@@ -16,6 +19,23 @@ const Services = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [bookingDate, setBookingDate] = useState('');
   const [notes, setNotes] = useState('');
+
+  //added
+  const [zones, setZones] = useState([]);
+  const [selectedZoneId, setSelectedZoneId] = useState('');
+  useEffect(() => {
+    if (selectedService) {
+      axios.get('https://thallous-nongraduated-doris.ngrok-free.dev/delivery-zones', {
+        headers: { 
+          'ngrok-skip-browser-warning': 'true',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(res => setZones(res.data))
+      .catch(err => console.error("Error fetching zones:", err));
+    }
+  }, [selectedService]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -36,22 +56,35 @@ const handleCategoryChange = (categoryName) => {
 
 
 const submitBooking = async () => {
-    if (!bookingDate) {
-      dispatch(showNotification({ type: 'error', message: 'Please select a date' }));
+    if (!bookingDate || !selectedZoneId) {
+      dispatch(showNotification({ type: 'error', message: 'Please select a date, time and location' }));
+
       return;
     }
+
+    const zone = zones.find(z => z.id === parseInt(selectedZoneId));
+    const finalPrice = (selectedService.base_price || 0) + (zone?.delivery_fee || 0);
 
     const result = await dispatch(createAppointment({
       service_id: selectedService.id,
       appointment_date: bookingDate,
-      total_price:selectedService.base_price || selectedService.price,
+      delivery_zone_id: selectedZoneId,
+      total_price:finalPrice,
       notes
     }));
 
     if (createAppointment.fulfilled.match(result)) {
+      const newAppointment = result.payload
       setSelectedService(null);
       setBookingDate('');
       setNotes('');
+
+      navigate('/mpesaForm', {
+        state: {
+          amount: finalPrice,
+          appointmentId: newAppointment.id
+        }
+      });
     }
   };
 
@@ -115,6 +148,18 @@ const submitBooking = async () => {
               value={bookingDate}
               onChange={(e) => setBookingDate(e.target.value)}
             />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Service Location/Zone</label>
+              <select 
+                className="w-full border rounded-lg p-2 mb-4 focus:ring-2 focus:ring-blue-500 outline-none"
+                value={selectedZoneId}
+                onChange={(e) => setSelectedZoneId(e.target.value)}
+                required
+              >
+                <option value="">Select Location...</option>
+                {zones.map(z => (
+                  <option key={z.id} value={z.id}>{z.zone_name} (+ Ksh {z.delivery_fee})</option>
+                ))}
+              </select>
 
             <label className="block text-sm font-medium text-gray-700 mb-1">Notes for the provider</label>
             <textarea 
