@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { showSpinner, showNotification, hideSpinner } from "./uiSlice";
 
-const API_URL = 'http://localhost:5555';
+const API_URL = 'http://127.0.0.1:5555';
 
 // --- Async Thunks ---
 export const fetchProducts = createAsyncThunk(

@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import NavLink from './NavLink';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../features/authSlice';
 // import { ShoppingCartIcon } from '@heroicons/react/24/outline';
@@ -49,14 +49,22 @@ const Navbar = () => {
                 </>
               )}
 
-              {/* --- ADMIN SPECIFIC SECTION --- */}
+              {/* --- SELLER SPECIFIC SECTION --- */}
               {isAdmin && (
                 <div className="flex space-x-3 border-l border-blue-400 pl-3">
-                  <NavLink to="/admin/dashboard" className="text-yellow-300 hover:text-white">Admin Dashboard</NavLink>
-                  <NavLink to="/admin/stock" className="hover:text-blue-200">Stock</NavLink>
+                  <NavLink to="/admin" className="text-yellow-300 hover:text-white">Seller Dashboard</NavLink>
+                  <NavLink to="/admin/stock" className="hover:text-blue-200">Inventory</NavLink>
                   <NavLink to="/admin/approval-stats" className="hover:text-blue-200">Approvals</NavLink>
-                  {/* Dropdown or simple link for adding items */}
                   <NavLink to="/admin/product-form" className="hover:text-blue-200">+Product</NavLink>
+                </div>
+              )}
+
+              {/* --- BUYER SPECIFIC SECTION --- */}
+              {isAuthenticated && !isAdmin && (
+                <div className="flex space-x-3 border-l border-blue-400 pl-3">
+                  <NavLink to="/products" className="hover:text-blue-200">Marketplace</NavLink>
+                  <NavLink to="/profile" className="hover:text-blue-200">Profile</NavLink>
+                  <NavLink to="/dashboard" className="hover:text-blue-200">My Orders</NavLink>
                 </div>
               )}
 

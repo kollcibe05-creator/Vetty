@@ -118,7 +118,7 @@ const ItemCard = ({
         {/* Action Button */}
         <button
           onClick={handleAction}
-          disabled={isProduct && (item.stock_quantity === 0 || isAdmin)}
+          disabled={isProduct && ((item.stock_quantity === 0) || isAdmin || !item.stock_quantity)}
           className={`
             w-full py-2.5 px-4 rounded-lg font-medium text-sm
             transition-all duration-200 transform active:scale-95
