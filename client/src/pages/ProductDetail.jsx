@@ -40,6 +40,7 @@ const ProductDetail = () => {
 
   // 2. UI Reset Effect (Fixes the ESLint "setState" warning)
   // We separate this so it only runs when the ID specifically changes
+  
   useEffect(() => {
     setSelectedQuantity(1);
     window.scrollTo(0, 0);

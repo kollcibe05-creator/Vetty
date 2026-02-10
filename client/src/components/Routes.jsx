@@ -23,11 +23,14 @@ import ProductForm from '../pages/admin/ProductForm';
 import ServiceForm from '../pages/admin/ServiceForm';
 import ApprovalStats from '../pages/admin/ApprovalStats';
 import OrderRow from '../pages/admin/OrderRow';
+import Cart from '../pages/Cart';
+import UserDashboard from '../pages/userDashboard';
+
 
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
     <Navbar />
-    <main className="flex-1">
+    <main className="flex-grow container mx-auto px-4 py-6">
       <Outlet />
     </main>
     <Footer />
@@ -47,6 +50,7 @@ const router = createBrowserRouter([
       { path: 'products/:id', element: <ProductDetail /> },
       { path: 'services', element: <Services /> },
       { path: 'services/:id', element: <ServiceDetail /> },
+      {path: 'cart', element: <Cart/>},
       { path: 'mpesaForm', element: <MpesaForm /> },
 
       
@@ -55,8 +59,9 @@ const router = createBrowserRouter([
         children: [
           { path: 'profile', element: <Profile /> },
           { path: 'profile/account', element: <AccountDetails /> },
-          { path: 'profile/service-stats', element: <ServiceStats /> },
-          { path: 'profile/product-stats', element: <ProductStats /> },
+          // { path: 'profile/service-stats', element: <ServiceStats /> },
+          // { path: 'profile/product-stats', element: <ProductStats /> },
+          { path: 'profile/user-dashboard', element: <UserDashboard /> },
         ],
       },
 

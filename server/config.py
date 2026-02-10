@@ -21,7 +21,7 @@ app = Flask(__name__)
 
 # app.secret_key = os.getenv('SECRET_KEY')
 app.secret_key = os.getenv('SECRET_KEY')
-app.secret_key = b'\xf2\x9e\xa7\xea+b]\xe04\xfd\xcd?a_\xf4:'
+# app.secret_key = b'\xf2\x9e\xa7\xea+b]\xe04\xfd\xcd?a_\xf4:'
 
 
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///app.db"
@@ -53,10 +53,12 @@ CORS(app, supports_credentials=True, origins=[
     "http://localhost:5173", 
     "http://127.0.0.1:5173",
     "http://localhost:5174",
-    "https://thallous-nongraduated-doris.ngrok-free.dev"
+    "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
 ])
 
 app.config.update(
-    SESSION_COOKIE_SAMESITE='None',
-    SESSION_COOKIE_SECURE=True
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=False  # Set to False for local development
 )

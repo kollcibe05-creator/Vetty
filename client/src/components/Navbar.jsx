@@ -1,62 +1,77 @@
-
 import { NavLink } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../features/authSlice';
+// import { ShoppingCartIcon } from '@heroicons/react/24/outline';
+import { selectCart } from '../features/cartSlice';
 
 const Navbar = () => {
   const { isAuthenticated, user } = useSelector(state => state.auth);
+  const { items } = useSelector(selectCart);
   const dispatch = useDispatch();
-  
 
-  // console.log(user)
-  // console.log(isAuthenticated)
+  // Helper to check if user is Admin (handles string or nested object)
+  const isAdmin = user?.role === 'Admin' || user?.role?.name === 'Admin';
+
   return (
     <nav className="bg-blue-600 text-white p-4 shadow-lg">
       <div className="container mx-auto flex justify-between items-center">
         <div className="text-xl font-bold">
-          <NavLink to="/home" className="text-white hover:text-blue-200">Vetty</NavLink>
+          <NavLink to="/home" className="hover:text-blue-200">Vetty</NavLink>
         </div>
+
         <div className="flex space-x-4 items-center">
-          <NavLink to="/products" className="text-white hover:text-blue-200">Products</NavLink>
-          <NavLink to="/products/1" className="text-white hover:text-blue-200">Product Detail</NavLink>
-          <NavLink to="/services" className="text-white hover:text-blue-200">Services</NavLink>
-          <NavLink to="/services/1" className="text-white hover:text-blue-200">Service Detail</NavLink>
+          {/* Public Links */}
+          <NavLink to="/home" className="hover:text-blue-200">Home</NavLink>
+          <NavLink to="/products" className="hover:text-blue-200">Products</NavLink>
+          <NavLink to="/services" className="hover:text-blue-200">Services</NavLink>
+
           {isAuthenticated ? (
             <>
-              <NavLink to="/home" className="text-white hover:text-blue-200">Home</NavLink>
-              <NavLink to="/profile" className="text-white hover:text-blue-200">Profile</NavLink>
-              {(user?.role === 'Admin' || user?.role?.name === 'Admin') && <NavLink to="/admin" className="text-white hover:text-blue-200">Admin</NavLink>}
-              <NavLink to="/admin/dashboard" className="text-white hover:text-blue-200">Admin Dashboard</NavLink>
-              <NavLink to="/admin/stats" lassName="text-white hover:text-blue-200">Admin Stats</NavLink>
-              <NavLink to="/admin/stock" className="text-white hover:text-blue-200">Stock Management</NavLink>
-              <NavLink to="/admin/product-form" className="text-white hover:text-blue-200">Add Product</NavLink>
-              <NavLink to="/admin/service-form" className="text-white hover:text-blue-200">Add Service</NavLink>
-              <NavLink to="/admin/approval-stats" className="text-white hover:text-blue-200">Approval Stats</NavLink>
-              <NavLink to="/admin/order-row" className="text-white hover:text-blue-200">Order Row</NavLink>
-              <NavLink to="/mpesaForm" className="text-white hover:text-blue-200">Mpesa</NavLink>
-              <NavLink to="/profile/account" className="text-white hover:text-blue-200">Account Details</NavLink>
-              <NavLink to="/profile/service-stats" className="text-white hover:text-blue-200">Service Stats</NavLink>
-              <NavLink to="/profile/product-stats" className="text-white hover:text-blue-200">Product Stats</NavLink>
-
+              <NavLink to="/cart" className="relative p-2 hover:bg-blue-500 rounded-full transition-colors">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    {items.length > 0 && (
+                      <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        {items.length}
+                      </span>
+                    )}
+              </NavLink>
+              {/* --- USER SPECIFIC LINKS --- */}
+              <NavLink to="/profile/user-dashboard" className="hover:text-blue-200">Profile</NavLink>
               
+              {!isAdmin && (
+                <>
+                   <NavLink to="/profile/user-dashboard" className="hover:text-blue-200">Dashboard</NavLink>
+
+                {/* //   <NavLink to="/profile/service-stats" className="hover:text-blue-200">My Services</NavLink>
+                //   <NavLink to="/profile/product-stats" className="hover:text-blue-200">My Orders</NavLink> */}
+                </>
+              )}
+
+              {/* --- ADMIN SPECIFIC SECTION --- */}
+              {isAdmin && (
+                <div className="flex space-x-3 border-l border-blue-400 pl-3">
+                  <NavLink to="/admin/dashboard" className="text-yellow-300 hover:text-white">Admin Dashboard</NavLink>
+                  <NavLink to="/admin/stock" className="hover:text-blue-200">Stock</NavLink>
+                  <NavLink to="/admin/approval-stats" className="hover:text-blue-200">Approvals</NavLink>
+                  {/* Dropdown or simple link for adding items */}
+                  <NavLink to="/admin/product-form" className="hover:text-blue-200">+Product</NavLink>
+                </div>
+              )}
 
               <button 
                 onClick={() => dispatch(logout())} 
-                className="bg-white text-blue-600 px-4 py-2 rounded hover:bg-blue-100"
+                className="bg-white text-blue-600 px-4 py-2 rounded hover:bg-blue-100 transition-colors"
               >
                 Logout
               </button>
             </>
           ) : (
             <>
-              <NavLink to="/login" className="text-white hover:text-blue-200">Login</NavLink>
-              <NavLink to="/signup" className="text-white hover:text-blue-200">Signup</NavLink>
-              
-
-
-
-              
-      
+              {/* --- GUEST LINKS --- */}
+              <NavLink to="/login" className="hover:text-blue-200">Login</NavLink>
+              <NavLink to="/signup" className="hover:text-blue-200">Signup</NavLink>
             </>
           )}
         </div>

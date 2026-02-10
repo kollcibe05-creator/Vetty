@@ -204,46 +204,28 @@ export const createAppointment = createAsyncThunk(
   }
 );
 
-  // const submitBooking = async () => {
-  //   if (!bookingDate) {
-  //     dispatch(showNotification({ type: 'error', message: 'Please select a date' }));
-  //     return;
-  //   }
-
-  //   // Validate that we have a valid datetime-local value
-  //   const dateObj = new Date(bookingDate);
-  //   if (isNaN(dateObj.getTime())) {
-  //     dispatch(showNotification({ type: 'error', message: 'Invalid date format' }));
-  //     return;
-  //   }
-
-  //   try {
-  //     const response = await fetch('http://localhost:5555/appointments', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({
-  //         service_id: selectedService.id,
-  //         appointment_date: bookingDate,
-  //         total_price: selectedService.base_price || 0,
-  //         notes: notes
-  //       }),
-  //       credentials: 'include'
-  //     });
-
-  //     if (response.ok) {
-  //       dispatch(showNotification({ type: 'success', message: 'Appointment booked successfully!' }));
-  //       setSelectedService(null); // Close form
-  //       setBookingDate('');
-  //       setNotes('');
-  //     } else {
-  //       const err = await response.json();
-  //       dispatch(showNotification({ type: 'error', message: err.error }));
-  //     }
-  //   } catch (error) {
-  //     dispatch(showNotification({ type: 'error', message: 'Server error. Try again later.' }));
-  //   }
-  // };
-
+ export const fetchUserOrders = createAsyncThunk(
+  'user/fetchOrders',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await axios.get(`${API_URL}/my-orders`, { withCredentials: true });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || 'Failed to fetch orders');
+    }
+  }
+);
+export const fetchUserAppointments = createAsyncThunk(
+  'user/fetchAppointments',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await axios.get(`${API_URL}/my-appointments`, { withCredentials: true });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || 'Failed to fetch appointments');
+    }
+  }
+);
 
 
 
@@ -257,6 +239,8 @@ const serviceSlice = createSlice({
     appointments: [],
     loading: false,
     error: null,
+    userOrders: [],
+    userAppointments: [],
     filters: {
       category: '',
       search: '',
@@ -397,7 +381,12 @@ const serviceSlice = createSlice({
       .addCase(createAppointment.rejected, (state, action) => {
             state.loading = false
             state.error = action.payload
-      });
+      })
+
+
+
+      .addCase(fetchUserOrders.fulfilled, (state, action) => { state.userOrders = action.payload; })
+      .addCase(fetchUserAppointments.fulfilled, (state, action) => { state.userAppointments = action.payload; })
   },
 });
 
