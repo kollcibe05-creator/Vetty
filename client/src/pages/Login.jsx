@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useFormik } from "formik";
 import * as yup from "yup";
 import { login } from '../features/authSlice';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import NavLink from '../components/NavLink';
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -78,7 +79,7 @@ const Login = () => {
         </form>
 
         <p className="text-center mt-4 text-gray-600">
-          Don't have an account? <Link to="/signup" className="text-blue-600 hover:underline">Sign up</Link>
+          Don't have an account? <NavLink to="/signup" className="text-blue-600 hover:underline">Sign up</NavLink>
         </p>
       </div>
     </div>

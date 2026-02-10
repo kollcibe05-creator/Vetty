@@ -169,7 +169,7 @@ const ProductDetail = () => {
 
                 <button
                   onClick={handleAddToCart}
-                  disabled={product.stock_quantity <= 0}
+                  disabled={product.stock_quantity <= 0 || !product.stock_quantity}
                   className="w-full py-4 px-6 rounded-xl font-bold text-lg shadow-lg transition-all duration-200 transform active:scale-[0.98] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed
                     bg-blue-600 hover:bg-blue-700 text-white hover:shadow-blue-200"
                 >

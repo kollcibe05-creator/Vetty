@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { showNotification } from '../features/uiSlice';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All'); // 'All', 'Scheduled', 'Cancelled'
@@ -11,12 +13,23 @@ const AdminDashboard = () => {
   const user = useSelector(state => state.auth.user);
 
   useEffect(() => {
+    // Check if user is authenticated and has admin role
+    if (!user || user.role?.name !== 'Admin') {
+      dispatch(showNotification({ 
+        type: 'error', 
+        title: 'Access Denied', 
+        message: 'Admin access required' 
+      }));
+      navigate('/login');
+      return;
+    }
+
     fetchAppointments();
-  }, []);
+  }, [user, dispatch, navigate]);
 
   const fetchAppointments = async () => {
     try {
-      const response = await fetch('http://localhost:5555/admin/appointments', {
+      const response = await fetch('http://127.0.0.1:5555/admin/appointments', {
         credentials: 'include'
       });
       
