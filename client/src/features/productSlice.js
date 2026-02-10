@@ -7,14 +7,19 @@ const API_URL = 'http://127.0.0.1:5555';
 // --- Async Thunks ---
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async (params = {}, { dispatch, rejectWithValue }) => {
+  async (arg = {}, { dispatch, rejectWithValue }) => {
+    const {background = false, ...filters} = arg
     try {
       // Only show spinner if we aren't doing a background refresh
-      if (!params.background) dispatch(showSpinner({message: "Loading products..."}));
+      if (!background) dispatch(showSpinner({message: "Loading products..."}));
+      const queryParams = {}
+      if (filters.category) queryParams.category = filters.category;
+      if (filters.search) queryParams.search = filters.search;
+      if (filters.sortBy) queryParams.sort_by = filters.sortBy;
+      if (filters.sortOrder) queryParams.sort_order = filters.sortOrder;
+      const res = await axios.get(`${API_URL}/products`, { params: queryParams });
       
-      const res = await axios.get(`${API_URL}/products`, { params });
-      
-      if (!params.background) dispatch(hideSpinner());
+      if (!background) dispatch(hideSpinner());
       return res.data;
     } catch (err) {
       dispatch(hideSpinner());

@@ -21,7 +21,7 @@ app = Flask(__name__)
 
 # app.secret_key = os.getenv('SECRET_KEY')
 app.secret_key = os.getenv('SECRET_KEY')
-app.secret_key = b'\xf2\x9e\xa7\xea+b]\xe04\xfd\xcd?a_\xf4:'
+# app.secret_key = b'\xf2\x9e\xa7\xea+b]\xe04\xfd\xcd?a_\xf4:'
 
 
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///app.db"

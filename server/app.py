@@ -96,9 +96,32 @@ class CheckSession(Resource):
 
 class ProductList(Resource):
     def get(self):
-        products = Product.query.all()
-        return [p.to_dict() for p in products], 200
+        # 1. Get query params from the URL
+        category_name = request.args.get('category')
+        search = request.args.get('search')
+        sort_by = request.args.get('sort_by', 'name')
+        sort_order = request.args.get('sort_order', 'asc')
 
+        query = Product.query
+
+        # 2. Filter by Category (joining with Category table)
+        if category_name:
+            query = query.join(Category).filter(Category.name == category_name)
+
+        # 3. Filter by Search
+        if search:
+            query = query.filter(Product.name.ilike(f"%{search}%"))
+
+        # 4. Sorting
+        if hasattr(Product, sort_by):
+            column = getattr(Product, sort_by)
+            if sort_order == 'desc':
+                query = query.order_by(column.desc())
+            else:
+                query = query.order_by(column.asc())
+
+        products = query.all()
+        return [p.to_dict() for p in products], 200
     @admin_required
     def post(self):
         data = request.get_json()
@@ -149,26 +172,27 @@ class ProductByID(Resource):
      
 class ServiceList(Resource):
     def get(self):
-        # Access query parameters
+        # Use snake_case to match what Redux is sending
         search = request.args.get('search')
-        sort_by = request.args.get('sortBy', 'name')
-        sort_order = request.args.get('sortOrder', 'asc')
+        category_name = request.args.get('category') # Add this!
+        sort_by = request.args.get('sort_by', 'name')
+        sort_order = request.args.get('sort_order', 'asc')
 
         query = Service.query
 
-        # Basic Search Filter
-        if search:
-            query = query.filter(Service.name.contains(search))
+        # Filter by Category
+        if category_name:
+            query = query.join(Category).filter(Category.name == category_name)
 
-        # Dynamic Sorting
-        if sort_order == 'asc':
-            query = query.order_by(getattr(Service, sort_by).asc())
-        else:
-            query = query.order_by(getattr(Service, sort_by).desc())
+        if search:
+            query = query.filter(Service.name.ilike(f"%{search}%"))
+
+        if hasattr(Service, sort_by):
+            column = getattr(Service, sort_by)
+            query = query.order_by(column.desc() if sort_order == 'desc' else column.asc())
 
         services = query.all()
         return [s.to_dict() for s in services], 200
-
 class CartResource(Resource):
     def get(self):
         user_id = session.get('user_id')
@@ -335,6 +359,7 @@ class AppointmentList(Resource):
                 appointment_date=appointment_date,
                 notes=data.get("notes"),
                 total_price=data.get('total_price'),
+                delivery_zone_id=data.get('delivery_zone_id'),
                 status='Scheduled' # Initial status matching model validation
             )
             
@@ -373,7 +398,42 @@ class CategoryList(Resource):
         db.session.commit()
         return new_category.to_dict(), 201
 
+class DeliveryZoneList(Resource):
+    def get(self):
+        zones = DeliveryZone.query.all()
+        return [z.to_dict() for z in zones], 200
 
+    @admin_required
+    def post(self):
+        data = request.get_json()
+        new_zone = DeliveryZone(
+            zone_name=data.get('zone_name'),
+            delivery_fee=data.get('delivery_fee')
+        )
+        db.session.add(new_zone)
+        db.session.commit()
+        return new_zone.to_dict(), 201
+
+# --- USER HISTORY RESOURCES ---
+
+class UserOrders(Resource):
+    def get(self):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+        
+        orders = Order.query.filter_by(user_id=user_id).order_by(Order.created_at.desc()).all()
+        return [o.to_dict() for o in orders], 200
+
+class UserAppointments(Resource):
+    def get(self):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+        
+        # This shows the status (Scheduled, Completed, Cancelled)
+        appointments = Appointment.query.filter_by(user_id=user_id).order_by(Appointment.appointment_date.desc()).all()
+        return [a.to_dict() for a in appointments], 200
 
 
 
@@ -598,6 +658,11 @@ api.add_resource(AdminApprovals, "/admin/approvals")
 api.add_resource(ServiceByID, '/services/<int:id>')
 api.add_resource(CategoryList, '/categories')
 api.add_resource(ProductByID, '/products/<int:id>')
+api.add_resource(DeliveryZoneList, '/delivery-zones')
+
+
+api.add_resource(UserOrders, '/my-orders')
+api.add_resource(UserAppointments, '/my-appointments')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
