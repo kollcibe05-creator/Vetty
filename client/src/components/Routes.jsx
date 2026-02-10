@@ -23,12 +23,11 @@ import StockManagement from '../pages/admin/StockManagement';
 import ProductForm from '../pages/admin/ProductForm';
 import ServiceForm from '../pages/admin/ServiceForm';
 import ApprovalStats from '../pages/admin/ApprovalStats';
-import UserDashboard from '../pages/UserDashboard';
+// import UserDashboard from '../pages/allUserDashboard';
 import DashboardOverview from '../pages/admin/DashboardOverview';
 import OrderRow from '../pages/admin/OrderRow';
 import Cart from '../pages/Cart';
 import UserDashboard from '../pages/userDashboard';
-
 
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -74,7 +73,7 @@ const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={['Admin']} />,
         children: [
           { path: 'admin', element: <DashboardOverview /> },
-          { path: 'admin/test', element: <TestAdmin /> },
+          // { path: 'admin/test', element: <TestAdmin /> },
           { path: 'admin/dashboard', element: <AdminDashboard /> },
           { path: 'admin/stats', element: <AdminStats /> },
           { path: 'admin/stock', element: <StockManagement /> },
@@ -86,7 +85,7 @@ const router = createBrowserRouter([
       },
 
       
-      { path: 'debug', element: <DebugAuth /> },
+      // { path: 'debug', element: <DebugAuth /> },
       { path: '', element: <Navigate to="/home" replace /> },
 
       
