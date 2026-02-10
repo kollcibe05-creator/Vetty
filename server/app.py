@@ -4,6 +4,7 @@ from datetime import datetime
 from functools import wraps
 import base64
 import requests 
+import os 
 
 # Import from your local project files
 from config import app, db, api, bcrypt
@@ -37,19 +38,29 @@ class Signup(Resource):
         if User.query.filter_by(email=data.get("email")).first():
             return {"error": "Email already registered"}, 400
         try:
-            customer_role = Role.query.filter_by(name="Customer").first()
+            # Check if this is a seller registration
+            role_name = data.get('role', 'Customer')
+            if role_name == 'Admin':
+                role = Role.query.filter_by(name="Admin").first()
+            else:
+                role = Role.query.filter_by(name="Customer").first()
+            
             new_user = User(
                 username=data.get('username'),
                 email=data.get('email'),
-                role=customer_role,
-                vetting_status='not_started' 
+                role=role,
+                vetting_status='not_started',
+                business_name=data.get('businessName'),
+                business_description=data.get('businessDescription')
             )
             new_user.password = data.get('password')  
             db.session.add(new_user)
             db.session.flush() 
 
-            new_cart = Cart(user_id=new_user.id)
-            db.session.add(new_cart)
+            # Only create cart for customers, not sellers
+            if role_name != 'Admin':
+                new_cart = Cart(user_id=new_user.id)
+                db.session.add(new_cart)
             
             db.session.commit()
             session['user_id'] = new_user.id
@@ -206,6 +217,46 @@ class CartResource(Resource):
             CartItem.query.filter_by(cart_id=cart.id).delete()
             db.session.commit()
         return {"message": "Cart cleared"}, 200
+
+class CartItemResource(Resource):
+    def patch(self, item_id):
+        user_id = session.get('user_id')
+        if not user_id: return {"error": "Unauthorized"}, 401
+        
+        item = CartItem.query.get(item_id)
+        if not item: return {"error": "Cart item not found"}, 404
+        
+        # Verify the cart item belongs to the user
+        cart = Cart.query.filter_by(user_id=user_id).first()
+        if not cart or item.cart_id != cart.id: 
+            return {"error": "Unauthorized"}, 401
+        
+        data = request.get_json()
+        quantity = data.get('quantity')
+        
+        if quantity is not None and quantity > 0:
+            item.quantity = quantity
+        else:
+            return {"error": "Invalid quantity"}, 400
+        
+        db.session.commit()
+        return item.to_dict(), 200
+    
+    def delete(self, item_id):
+        user_id = session.get('user_id')
+        if not user_id: return {"error": "Unauthorized"}, 401
+        
+        item = CartItem.query.get(item_id)
+        if not item: return {"error": "Cart item not found"}, 404
+        
+        # Verify the cart item belongs to the user
+        cart = Cart.query.filter_by(user_id=user_id).first()
+        if not cart or item.cart_id != cart.id: 
+            return {"error": "Unauthorized"}, 401
+        
+        db.session.delete(item)
+        db.session.commit()
+        return {"message": "Item removed from cart"}, 200
 
 class Checkout(Resource):
     def post(self):
@@ -423,7 +474,7 @@ class MpesaPayment(Resource):
                 "PartyA": phone,
                 "PartyB": business_shortcode,
                 "PhoneNumber": phone,
-                "CallBackURL": "https://thallous-nongraduated-doris.ngrok-free.dev/callback", 
+                "CallBackURL": "http://127.0.0.1:5555/callback", 
                 "AccountReference": f"Order{order_id}" if order_id else "VettyPay",
                 "TransactionDesc": "Vetty Payment"
             }
@@ -485,8 +536,42 @@ class AdminStats(Resource):
         return {
             "revenue": float(rev),
             "pending_orders": Order.query.filter_by(status='Pending').count(),
-            "low_stock": InventoryAlert.query.count()
+            "low_stock": Product.query.filter(Product.stock_quantity < 10).count()
         }, 200
+
+# --- ADMIN INVENTORY ---
+
+class AdminInventory(Resource):
+    @admin_required
+    def get(self):
+        products = Product.query.all()
+        inventory = []
+        for product in products:
+            inventory.append({
+                'id': product.id,
+                'name': product.name,
+                'stock_quantity': product.stock_quantity,
+                'price': product.price,
+                'category': product.category.name if product.category else 'Uncategorized'
+            })
+        return inventory, 200
+
+# --- ADMIN ORDERS ---
+
+class AdminOrders(Resource):
+    @admin_required
+    def get(self):
+        orders = Order.query.all()
+        return [order.to_dict() for order in orders], 200
+
+# --- ADMIN APPROVALS ---
+
+class AdminApprovals(Resource):
+    @admin_required
+    def get(self):
+        # Get pending orders that need approval
+        pending_orders = Order.query.filter_by(status='Pending').all()
+        return [order.to_dict() for order in pending_orders], 200
 
 # --- API ROUTE REGISTRATION ---
 
@@ -498,13 +583,17 @@ api.add_resource(ServiceList, '/services')
 api.add_resource(ProductList, '/products')
 
 api.add_resource(CartResource, '/cart', '/cart-items') # Mapped to both to fix your CORS error
-api.add_resource(Checkout, "/check-out")
+api.add_resource(CartItemResource, '/cart-items/<int:item_id>') # For individual cart item operations
+api.add_resource(Checkout, "/checkout", "/check-out") # Support both routes
 api.add_resource(AppointmentList, '/appointments')
 api.add_resource(AdminAppointmentList, '/admin/appointments')
 api.add_resource(AdminAppointmentResource, '/admin/appointments/<int:appointment_id>')
 api.add_resource(MpesaPayment, '/payments/mpesa')
 api.add_resource(MpesaCallback, '/callback')
 api.add_resource(AdminStats, "/admin/stats")
+api.add_resource(AdminInventory, "/admin/inventory")
+api.add_resource(AdminOrders, "/admin/orders")
+api.add_resource(AdminApprovals, "/admin/approvals")
 
 api.add_resource(ServiceByID, '/services/<int:id>')
 api.add_resource(CategoryList, '/categories')
