@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import api from "../api/axios";
 
 function CategoryFilter({ category_type, onSelectedCategory, activeCategory }) {
     const [categories, setCategories] = useState([]);
 
     useEffect(() => {
-        fetch("http://localhost:5555/categories")
-            .then(r => r.json())
-            .then(data => {
+        api.get("/categories")
+            .then(response => {
                 // Filter categories based on the type (Service vs Product)
-                const filtered = data.filter(cat => 
+                const filtered = response.data.filter(cat => 
                     cat.category_type.toLowerCase() === category_type.toLowerCase()
                 );
                 setCategories(filtered);

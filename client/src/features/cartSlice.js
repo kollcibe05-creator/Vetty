@@ -1,17 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../api/axios';
 import { showSpinner, hideSpinner, showNotification } from './uiSlice';
-import { fetchProducts } from './productSlice';
-
-const API_URL = 'https://thallous-nongraduated-doris.ngrok-free.dev';
-
-const axiosConfig = {
-  withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true',
-  },
-};
 
 const handleAsyncError = (err, dispatch, defaultMessage, rejectWithValue) => {
   dispatch(hideSpinner());
@@ -20,22 +9,25 @@ const handleAsyncError = (err, dispatch, defaultMessage, rejectWithValue) => {
   return rejectWithValue(message);
 };
 
-// --- ASYNC THUNKS ---
-export const fetchCart = createAsyncThunk('cart/fetchCart', async (_, { rejectWithValue, dispatch }) => {
+
+
+export const fetchCart = createAsyncThunk('cart/fetch', async (_, { rejectWithValue, dispatch, getState }) => {
   try {
-    dispatch(showSpinner({ message: 'Loading cart...' }));
-    const res = await axios.get(`${API_URL}/cart`, axiosConfig);
-    dispatch(hideSpinner());
+    const res = await api.get('/cart');
     return res.data;
   } catch (err) {
-    return handleAsyncError(err, dispatch, 'Failed to fetch cart', rejectWithValue);
+    // Don't retry on 401 - user is not authenticated
+    if (err.response?.status === 401) {
+      return rejectWithValue('Not authenticated');
+    }
+    return rejectWithValue(err.response?.data?.error || 'Failed to fetch cart');
   }
 });
 
-export const addToCart = createAsyncThunk('cart/addToCart', async ({ productId, quantity }, { rejectWithValue, dispatch }) => {
+export const addToCart = createAsyncThunk('cart/add', async ({ productId, quantity }, { rejectWithValue, dispatch }) => {
   try {
     dispatch(showSpinner({ message: 'Adding to cart...' }));
-    const res = await axios.post(`${API_URL}/cart-items`, { product_id: productId, quantity }, axiosConfig);
+    const res = await api.post('/cart-items', { product_id: productId, quantity });
     dispatch(hideSpinner());
     return res.data;
   } catch (err) {
@@ -43,107 +35,147 @@ export const addToCart = createAsyncThunk('cart/addToCart', async ({ productId, 
   }
 });
 
-export const updateCartItem = createAsyncThunk('cart/updateCartItem', async ({ cartItemId, quantity }, { rejectWithValue, dispatch }) => {
+export const processMpesaPayment = createAsyncThunk(
+  'cart/processMpesaPayment',
+  async (paymentData, { rejectWithValue, dispatch }) => {
+    try {
+      dispatch(showSpinner({ message: 'Initiating M-Pesa payment...' }));
+      // This matches your backend route for STK Push/Payments
+      const res = await api.post('/payments/mpesa', paymentData); 
+      dispatch(hideSpinner());
+      dispatch(showNotification({ 
+        type: 'success', 
+        title: 'Success', 
+        message: 'Payment request sent to your phone!' 
+      }));
+      return res.data;
+    } catch (err) {
+      return handleAsyncError(err, dispatch, 'M-Pesa payment failed', rejectWithValue);
+    }
+  }
+);
+
+export const updateCartItem = createAsyncThunk('cart/update', async ({ itemId, quantity }, { rejectWithValue, dispatch }) => {
   try {
-    dispatch(showSpinner({ message: 'Updating...' }));
-    const res = await axios.patch(`${API_URL}/cart/${cartItemId}`, { quantity }, axiosConfig);
+    dispatch(showSpinner({ message: 'Updating cart...' }));
+    const res = await api.patch(`/cart-items/${itemId}`, { quantity });
     dispatch(hideSpinner());
     return res.data;
   } catch (err) {
-    return handleAsyncError(err, dispatch, 'Update failed', rejectWithValue);
+    return handleAsyncError(err, dispatch, 'Failed to update item', rejectWithValue);
   }
 });
 
-export const removeFromCart = createAsyncThunk('cart/removeFromCart', async (cartItemId, { rejectWithValue, dispatch }) => {
+export const removeFromCart = createAsyncThunk('cart/remove', async (itemId, { rejectWithValue, dispatch }) => {
   try {
-    dispatch(showSpinner({ message: 'Removing...' }));
-    await axios.delete(`${API_URL}/cart/${cartItemId}`, axiosConfig);
+    dispatch(showSpinner({ message: 'Removing item...' }));
+    const res = await api.delete(`/cart-items/${itemId}`);
     dispatch(hideSpinner());
-    return cartItemId;
+    return itemId; // Return the removed item ID
   } catch (err) {
-    return handleAsyncError(err, dispatch, 'Remove failed', rejectWithValue);
+    return handleAsyncError(err, dispatch, 'Failed to remove item', rejectWithValue);
   }
 });
 
-export const clearCart = createAsyncThunk('cart/clearCart', async (_, { rejectWithValue, dispatch }) => {
+export const clearCart = createAsyncThunk('cart/clear', async (_, { rejectWithValue, dispatch }) => {
   try {
-    dispatch(showSpinner({ message: 'Clearing...' }));
-    await axios.delete(`${API_URL}/cart`, axiosConfig);
-    dispatch(hideSpinner());
-    return [];
-  } catch (err) {
-    return handleAsyncError(err, dispatch, 'Clear failed', rejectWithValue);
-  }
-});
-
-export const processCheckout = createAsyncThunk('cart/processCheckout', async (_, { rejectWithValue, dispatch }) => {
-  try {
-    dispatch(showSpinner({ message: 'Processing order...' }));
-    const res = await axios.post(`${API_URL}/check-out`, {}, axiosConfig);
-    dispatch(hideSpinner());
-    dispatch(fetchProducts());
-    return res.data;
-  } catch (err) {
-    return handleAsyncError(err, dispatch, 'Checkout failed', rejectWithValue);
-  }
-});
-
-export const processMpesaPayment = createAsyncThunk('cart/processMpesaPayment', async (paymentData, { rejectWithValue, dispatch }) => {
-  try {
-    dispatch(showSpinner({ message: 'Requesting M-Pesa Prompt...' }));
-    const res = await axios.post(`${API_URL}/payments/mpesa`, paymentData, axiosConfig);
+    dispatch(showSpinner({ message: 'Clearing cart...' }));
+    const res = await api.delete('/cart');
     dispatch(hideSpinner());
     return res.data;
   } catch (err) {
-    return handleAsyncError(err, dispatch, 'M-Pesa Failed', rejectWithValue);
+    return handleAsyncError(err, dispatch, 'Failed to clear cart', rejectWithValue);
   }
 });
+
+export const processCheckout = createAsyncThunk(
+  'cart/checkout',
+  async (checkoutData, { rejectWithValue, dispatch }) => {
+    try {
+      dispatch(showSpinner({ message: 'Processing checkout...' }));
+      const res = await api.post('/checkout', checkoutData);
+      dispatch(hideSpinner());
+      dispatch(showNotification({ 
+        type: 'success', 
+        title: 'Success', 
+        message: 'Order placed successfully!' 
+      }));
+      dispatch(clearCartState()); // Clear the cart locally after success
+      return res.data;
+    } catch (err) {
+      return handleAsyncError(err, dispatch, 'Checkout failed', rejectWithValue);
+    }
+  }
+);
+
+// ... Repeat similar cleanup for updateCartItem, removeFromCart, etc., using api.patch/api.delete
 
 const cartSlice = createSlice({
   name: 'cart',
-  initialState: { items: [], loading: false, error: null, totalAmount: 0 },
+  initialState: { items: [], loading: false, error: null, totalAmount: 0, isAuthenticated: false },
   reducers: {
-    clearError: (state) => { state.error = null; },
-    calculateTotal: (state) => {
-      state.totalAmount = state.items.reduce((t, i) => t + i.quantity * i.product.price, 0);
-    },
+    clearCartState: (state) => {
+      state.items = [];
+      state.totalAmount = 0;
+    }
   },
   extraReducers: (builder) => {
-    const updateData = (state, action) => {
-      state.loading = false;
-      state.items = action.payload.cart_items || [];
-      state.totalAmount = action.payload.total_amount || 0;
-    };
-
     builder
-      // 1. ADD ALL CASES FIRST
-      .addCase(fetchCart.fulfilled, updateData)
-      .addCase(addToCart.fulfilled, updateData)
-      .addCase(updateCartItem.fulfilled, updateData)
-      .addCase(processCheckout.fulfilled, (state) => {
+      .addCase(fetchCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = [];
-        state.totalAmount = 0;
+        state.items = action.payload.cart_items || [];
+        state.totalAmount = action.payload.total_amount || 0;
+        state.isAuthenticated = true;
+      })
+      .addCase(updateCartItem.fulfilled, (state, action) => {
+        state.loading = false;
+        // Update the item in the cart
+        const updatedItem = action.payload;
+        const index = state.items.findIndex(item => item.id === updatedItem.id);
+        if (index !== -1) {
+          state.items[index] = updatedItem;
+        }
+        // Recalculate total
+        state.totalAmount = state.items.reduce((total, item) => total + (item.quantity * item.product.price), 0);
+      })
+      .addCase(removeFromCart.fulfilled, (state, action) => {
+        state.loading = false;
+        // Remove the item from the cart
+        const removedItemId = action.payload;
+        state.items = state.items.filter(item => item.id !== removedItemId);
+        // Recalculate total
+        state.totalAmount = state.items.reduce((total, item) => total + (item.quantity * item.product.price), 0);
       })
       .addCase(clearCart.fulfilled, (state) => {
         state.loading = false;
         state.items = [];
         state.totalAmount = 0;
+        state.isAuthenticated = false;
       })
-      .addCase(removeFromCart.fulfilled, (state, action) => {
-        state.loading = false;
-        state.items = state.items.filter(i => i.id !== action.payload);
-        state.totalAmount = state.items.reduce((t, i) => t + i.quantity * i.product.price, 0);
-      })
-      .addCase(processMpesaPayment.fulfilled, (state) => {
-        state.loading = false;
-      })
-      // 2. ADD MATCHERS LAST
-      .addMatcher((a) => a.type.endsWith('/pending'), (s) => { s.loading = true; s.error = null; })
-      .addMatcher((a) => a.type.endsWith('/rejected'), (s, a) => { s.loading = false; s.error = a.payload; });
+      .addMatcher(
+        (action) => action.type.startsWith('cart/') && action.type.endsWith('/pending'),
+        (state) => { state.loading = true; }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('cart/') && action.type.endsWith('/rejected'),
+        (state, action) => { 
+          state.loading = false; 
+          state.error = action.payload;
+          // Mark as unauthenticated on 401
+          if (action.payload === 'Not authenticated') {
+            state.isAuthenticated = false;
+          }
+        }
+      );
   },
 });
 
-export const { clearError, calculateTotal } = cartSlice.actions;
-export const selectCart = (state) => state.cart;
+// Selectors - This is what Home.jsx is looking for!
+// Selectors - Safe versions with fallbacks
+export const selectCart = (state) => state.cart?.items || []; 
+export const selectCartTotal = (state) => state.cart?.totalAmount || 0;
+export const selectCartLoading = (state) => state.cart?.loading || false;
+export const selectCartError = (state) => state.cart?.error || null;
+
+export const { clearCartState } = cartSlice.actions;
 export default cartSlice.reducer;
