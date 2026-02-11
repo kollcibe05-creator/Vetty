@@ -24,6 +24,11 @@ import StockManagement from '../pages/admin/StockManagement';
 import ProductForm from '../pages/admin/ProductForm';
 import ServiceForm from '../pages/admin/ServiceForm';
 import ApprovalStats from '../pages/admin/ApprovalStats';
+<<<<<<< HEAD
+=======
+// import UserDashboard from '../pages/allUserDashboard';
+import DashboardOverview from '../pages/admin/DashboardOverview';
+>>>>>>> fa9bc719277a2cb1a734b063a750d78dc189d702
 import OrderRow from '../pages/admin/OrderRow';
 <<<<<<< HEAD
 import DebugAuth from '../pages/DebugAuth';
@@ -31,8 +36,11 @@ import DebugAuth from '../pages/DebugAuth';
 import Cart from '../pages/Cart';
 import UserDashboard from '../pages/userDashboard';
 
+<<<<<<< HEAD
 >>>>>>> origin/suleiman
 
+=======
+>>>>>>> fa9bc719277a2cb1a734b063a750d78dc189d702
 const Layout = () => (
   <div className="flex flex-col min-h-screen bg-[#FFFBF0]">
     <Navbar />
@@ -94,6 +102,10 @@ const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={['Admin', 'Seller', 'admin', 'seller']} />,
         children: [
           { path: 'admin', element: <DashboardOverview /> },
+<<<<<<< HEAD
+=======
+          // { path: 'admin/test', element: <TestAdmin /> },
+>>>>>>> fa9bc719277a2cb1a734b063a750d78dc189d702
           { path: 'admin/dashboard', element: <AdminDashboard /> },
           { path: 'admin/stock', element: <StockManagement /> },
           { path: 'admin/add-product', element: <ProductForm /> },
@@ -103,8 +115,13 @@ const router = createBrowserRouter([
         ],
       },
 
+<<<<<<< HEAD
       // --- 4. System Logic ---
       { path: 'debug', element: <DebugAuth /> },
+=======
+      
+      // { path: 'debug', element: <DebugAuth /> },
+>>>>>>> fa9bc719277a2cb1a734b063a750d78dc189d702
       { path: '', element: <Navigate to="/home" replace /> },
       { 
         path: '*', 
