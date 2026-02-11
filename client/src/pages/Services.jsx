@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchServices, setFilters, selectServices, selectServiceLoading, createAppointment } from '../features/serviceSlice';
 import { showNotification } from '../features/uiSlice';
@@ -6,6 +8,7 @@ import ItemCard from '../components/ItemCard';
 import CategoryFilter from '../components/CategoryFilter';
 
 const Services = () => {
+  const navigate = useNavigate()
   const dispatch = useDispatch();
   const { items, filters } = useSelector(selectServices);
   const isLoading = useSelector(selectServiceLoading);
@@ -15,6 +18,23 @@ const Services = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [bookingDate, setBookingDate] = useState('');
   const [notes, setNotes] = useState('');
+
+  //added
+  const [zones, setZones] = useState([]);
+  const [selectedZoneId, setSelectedZoneId] = useState('');
+  useEffect(() => {
+    if (selectedService) {
+      axios.get('https://thallous-nongraduated-doris.ngrok-free.dev/delivery-zones', {
+        headers: { 
+          'ngrok-skip-browser-warning': 'true',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(res => setZones(res.data))
+      .catch(err => console.error("Error fetching zones:", err));
+    }
+  }, [selectedService]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -33,6 +53,7 @@ const Services = () => {
     dispatch(setFilters({search: value}));
   };
 
+<<<<<<< HEAD
   const submitBooking = async () => {
     if (!bookingDate) {
       dispatch(showNotification({ type: 'error', message: 'Please select a date' }));
@@ -42,12 +63,37 @@ const Services = () => {
       service_id: selectedService.id,
       appointment_date: bookingDate,
       total_price: selectedService.base_price || selectedService.price,
+=======
+const submitBooking = async () => {
+    if (!bookingDate || !selectedZoneId) {
+      dispatch(showNotification({ type: 'error', message: 'Please select a date, time and location' }));
+
+      return;
+    }
+
+    const zone = zones.find(z => z.id === parseInt(selectedZoneId));
+    const finalPrice = (selectedService.base_price || 0) + (zone?.delivery_fee || 0);
+
+    const result = await dispatch(createAppointment({
+      service_id: selectedService.id,
+      appointment_date: bookingDate,
+      delivery_zone_id: selectedZoneId,
+      total_price:finalPrice,
+>>>>>>> origin/suleiman
       notes
     }));
     if (createAppointment.fulfilled.match(result)) {
+      const newAppointment = result.payload
       setSelectedService(null);
       setBookingDate('');
       setNotes('');
+
+      navigate('/mpesaForm', {
+        state: {
+          amount: finalPrice,
+          appointmentId: newAppointment.id
+        }
+      });
     }
   };
 
@@ -91,6 +137,7 @@ const Services = () => {
               category_type="Service" 
               onSelectedCategory={handleCategoryChange} 
             />
+<<<<<<< HEAD
           </div>
           
           <div className="flex items-center gap-3 bg-purple-50 px-4 py-2 rounded-full border border-purple-100">
@@ -103,6 +150,43 @@ const Services = () => {
               <option value="name">Name (A-Z)</option>
               <option value="base_price">Price (Low-High)</option>
             </select>
+=======
+            <label className="block text-sm font-medium text-gray-700 mb-1">Service Location/Zone</label>
+              <select 
+                className="w-full border rounded-lg p-2 mb-4 focus:ring-2 focus:ring-blue-500 outline-none"
+                value={selectedZoneId}
+                onChange={(e) => setSelectedZoneId(e.target.value)}
+                required
+              >
+                <option value="">Select Location...</option>
+                {zones.map(z => (
+                  <option key={z.id} value={z.id}>{z.zone_name} (+ Ksh {z.delivery_fee})</option>
+                ))}
+              </select>
+
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notes for the provider</label>
+            <textarea 
+              className="w-full border rounded-lg p-2 mb-4"
+              placeholder="Any specific requests?"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+
+            <div className="flex gap-3">
+              <button 
+                onClick={submitBooking}
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+              >
+                Confirm Booking
+              </button>
+              <button 
+                onClick={() => setSelectedService(null)}
+                className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg font-semibold hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+            </div>
+>>>>>>> origin/suleiman
           </div>
         </div>
 

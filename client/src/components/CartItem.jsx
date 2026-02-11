@@ -1,12 +1,21 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { updateCartItem, removeFromCart } from '../features/cartSlice';
+import { showNotification } from '../features/uiSlice';
 
 const CartItem = ({ item }) => {
   const dispatch = useDispatch();
 
+  //edited
   const handleQuantityChange = (newQuantity) => {
     if (newQuantity < 1) return;
+    if (newQuantity > item.product.stock_quantity){
+      dispatch(showNotification({
+        type: 'error',
+        message: 'Cannot exceed available stock'
+      }))
+      return
+    }
     dispatch(updateCartItem({ cartItemId: item.id, quantity: newQuantity }));
   };
 

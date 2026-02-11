@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchServiceById, fetchServices, createAppointment } from '../features/serviceSlice';
@@ -11,6 +12,7 @@ const ServiceDetail = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+<<<<<<< HEAD
   const { items } = useSelector(selectServices);
   const service = useSelector(selectCurrentService);
   const isLoading = useSelector(selectServiceLoading);
@@ -19,6 +21,38 @@ const ServiceDetail = () => {
   const [isBooking, setIsBooking] = useState(false);
   const [bookingDate, setBookingDate] = useState('');
   const [notes, setNotes] = useState('');
+=======
+const {items} = useSelector(selectServices)
+const service = useSelector(selectCurrentService);
+const isLoading = useSelector(selectServiceLoading);
+const {isAuthenticated} = useSelector((state) => state.auth)
+
+const [isBooking, setIsBooking] = useState(false)
+  
+const [bookingDate, setBookingDate] = useState('');
+const [notes, setNotes] = useState('');
+  
+>>>>>>> origin/suleiman
+
+  //added
+  const [zones, setZones] = useState([]);
+  const [selectedZoneId, setSelectedZoneId] = useState('');
+
+  useEffect(() => {
+    if (isBooking) {
+      axios.get('https://thallous-nongraduated-doris.ngrok-free.dev/delivery-zones', {
+        headers: { 
+          'ngrok-skip-browser-warning': 'true',
+          'Accept': 'application/json',
+          "Content-Type": 'application/json'
+        }
+      })
+      .then(res => setZones(res.data));
+    }
+  }, [isBooking]);
+
+
+ 
 
   useEffect(() => {
     if (id) {
@@ -83,6 +117,36 @@ const ServiceDetail = () => {
     );
   }
 
+<<<<<<< HEAD
+=======
+  const submitBooking = async () => {
+    if (!bookingDate || !selectedZoneId) {
+      dispatch(showNotification({type: 'error', message: 'Please select a date, time and location'}) )
+      return
+    }
+    const zone = zones.find(z => z.id === parseInt(selectedZoneId));
+    const finalPrice = (service.base_price || 0) + (zone?.delivery_fee || 0);
+
+    const result = await dispatch(createAppointment({
+        service_id: service.id,
+        appointment_date: bookingDate,
+        delivery_zone_id: selectedZoneId,
+        total_price: finalPrice,
+        notes
+    }));
+    if (createAppointment.fulfilled.match(result)) {
+      setIsBooking(false)
+      setBookingDate('')
+      setNotes('')
+      navigate('/mpesaForm', {state: {
+        amount: finalPrice,
+        appointmentId: result.payload.id
+      }})
+    }
+  }
+
+
+>>>>>>> origin/suleiman
   const relatedServices = items
     .filter(item => item.category?.name === service.category?.name && item.id !== service?.id)
     .slice(0, 4);
@@ -154,6 +218,10 @@ const ServiceDetail = () => {
               >
                 Book a Session 🐾
               </button>
+<<<<<<< HEAD
+=======
+              
+>>>>>>> origin/suleiman
             </div>
           </div>
         </div>
@@ -187,6 +255,7 @@ const ServiceDetail = () => {
               <p className="text-orange-600 font-bold uppercase tracking-widest text-xs">{service.name}</p>
             </div>
             
+<<<<<<< HEAD
             <div className="space-y-6">
               <div>
                 <label className="block text-[10px] font-black text-[#2D1B69] uppercase tracking-[0.2em] mb-2 ml-2">Pick a Date & Time</label>
@@ -197,6 +266,27 @@ const ServiceDetail = () => {
                   onChange={(e) => setBookingDate(e.target.value)}
                 />
               </div>
+=======
+            <label className="block text-sm font-medium mb-1">Select Date & Time</label>
+            <input 
+              type="datetime-local" 
+              className="w-full border rounded-lg p-2 mb-4"
+              value={bookingDate}
+              onChange={(e) => setBookingDate(e.target.value)}
+            />
+            <label className="block text-sm font-medium mb-1">Service Location/Zone</label>
+                <select 
+                  className="w-full border rounded-lg p-2 mb-4"
+                  value={selectedZoneId}
+                  onChange={(e) => setSelectedZoneId(e.target.value)}
+                  required
+                >
+                  <option value="">Select Location...</option>
+                  {zones.map(z => (
+                    <option key={z.id} value={z.id}>{z.zone_name} (+ Ksh {z.delivery_fee})</option>
+                  ))}
+                </select>
+>>>>>>> origin/suleiman
 
               <div>
                 <label className="block text-[10px] font-black text-[#2D1B69] uppercase tracking-[0.2em] mb-2 ml-2">Notes (Allergies, Temperament...)</label>
