@@ -3,19 +3,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useFormik } from "formik";
 import * as yup from "yup";
 import { login } from '../features/authSlice';
-import { useNavigate } from 'react-router-dom';
-import NavLink from '../components/NavLink';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error, isAuthenticated } = useSelector(state => state.auth);
 
+  // Redirect to dashboard if already logged in
   useEffect(() => {
-    if (isAuthenticated) navigate('/profile');
+    if (isAuthenticated) navigate('/dashboard');
   }, [isAuthenticated, navigate]);
 
-    const schema = yup.object({
+  const schema = yup.object({
     email: yup.string().email("Invalid email").required("Email is required"),
     password: yup.string().required("Password is required"),
   });
@@ -27,7 +27,7 @@ const Login = () => {
       try {
         await dispatch(login(values)).unwrap();
         resetForm();
-        navigate("/");
+        navigate("/dashboard"); // Redirecting to the main dashboard
       } catch (err) {
         console.error("Login failed", err);
       }
@@ -35,52 +35,86 @@ const Login = () => {
   });
 
   return (
-    <div className="auth-container min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="form-box bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4 text-center">Welcome Back</h2>
-        <p className="text-gray-600 text-center mb-6">
-          Log in to access our splendid services and products.
-        </p>
-
-        <form onSubmit={formik.handleSubmit}>
-          <div className="input-group">
-            <label>Email</label>
-            <input
-              type="email"
-              {...formik.getFieldProps("email")}
-              className={formik.touched.email && formik.errors.email ? "error-border" : ""}
-            />
-            {formik.touched.email && formik.errors.email && (
-              <p className="error-message">{formik.errors.email}</p>
-            )}
+    <div className="min-h-[80vh] flex items-center justify-center bg-[#FFFBF0]">
+      <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-orange-50 w-full max-w-md relative overflow-hidden">
+        {/* Decorative elements to match homepage style */}
+        <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400/20 rounded-full -mr-12 -mt-12"></div>
+        
+        <div className="relative">
+          <div className="text-center mb-8">
+            <span className="text-4xl">🐾</span>
+            <h2 className="text-3xl font-black text-[#2D1B69] mt-2">Welcome Back</h2>
+            <p className="text-orange-600 font-bold uppercase tracking-widest text-[10px] mt-2">
+              Ready to pamper your pet?
+            </p>
           </div>
 
-          <div className="mb-4">
-            <label className="block mb-1">Password</label>
-            <input
-              type="password"
-              {...formik.getFieldProps("password")}
-              className={`w-full px-3 py-2 border rounded ${formik.touched.password && formik.errors.password ? "border-red-500" : "border-gray-300"}`}
-            />
-            {formik.touched.password && formik.errors.password && (
-              <p className="text-red-500 text-sm mt-1">{formik.errors.password}</p>
+          <form onSubmit={formik.handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-xs font-black text-[#2D1B69] uppercase tracking-wider mb-2 ml-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                {...formik.getFieldProps("email")}
+                className={`w-full px-6 py-4 rounded-full border-2 transition-all outline-none ${
+                  formik.touched.email && formik.errors.email 
+                  ? "border-red-400 bg-red-50" 
+                  : "border-gray-100 bg-gray-50 focus:border-yellow-400 focus:bg-white"
+                }`}
+                placeholder="hello@vetty.com"
+              />
+              {formik.touched.email && formik.errors.email && (
+                <p className="text-red-500 text-[10px] font-bold mt-2 ml-4 uppercase">{formik.errors.email}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-black text-[#2D1B69] uppercase tracking-wider mb-2 ml-1">
+                Password
+              </label>
+              <input
+                type="password"
+                {...formik.getFieldProps("password")}
+                className={`w-full px-6 py-4 rounded-full border-2 transition-all outline-none ${
+                  formik.touched.password && formik.errors.password 
+                  ? "border-red-400 bg-red-50" 
+                  : "border-gray-100 bg-gray-50 focus:border-yellow-400 focus:bg-white"
+                }`}
+                placeholder="••••••••"
+              />
+              {formik.touched.password && formik.errors.password && (
+                <p className="text-red-500 text-[10px] font-bold mt-2 ml-4 uppercase">{formik.errors.password}</p>
+              )}
+            </div>
+
+            {error && (
+              <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-xs font-bold text-center border border-red-100">
+                ⚠️ {error}
+              </div>
             )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#2D1B69] text-white py-4 px-6 rounded-full font-black text-sm uppercase tracking-widest hover:bg-orange-500 shadow-lg shadow-purple-100 transition-all transform hover:-translate-y-1 disabled:opacity-50"
+            >
+              {loading ? "Verifying..." : "Login to Vetty"}
+            </button>
+          </form>
+
+          <div className="text-center mt-8 space-y-2">
+            <p className="text-gray-400 text-xs font-bold">
+              New to the family?{' '}
+              <Link to="/signup" className="text-orange-600 hover:underline">
+                Create an account
+              </Link>
+            </p>
+            <p className="text-gray-400 text-[10px] font-medium uppercase tracking-tighter">
+              Or join as a <Link to="/seller-signup" className="text-[#2D1B69] font-black underline">Service Provider</Link>
+            </p>
           </div>
-
-          {error && <div className="text-red-500 mb-4">{error}</div>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition disabled:opacity-50"
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
-
-        <p className="text-center mt-4 text-gray-600">
-          Don't have an account? <NavLink to="/signup" className="text-blue-600 hover:underline">Sign up</NavLink>
-        </p>
+        </div>
       </div>
     </div>
   );
