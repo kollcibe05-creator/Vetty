@@ -13,7 +13,7 @@ const ServiceStats = () => {
   });
 
   useEffect(() => {
-    // Mock service statistics - in real app, this would come from API
+    // In a real app, you'd dispatch(fetchAppointments())
     setStats({
       total: 12,
       completed: 8,
@@ -23,38 +23,74 @@ const ServiceStats = () => {
   }, [dispatch]);
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6">Service Statistics</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-600">Total Services</h3>
-          <p className="text-3xl font-bold text-blue-600">{stats.total}</p>
+    <div className="min-h-screen bg-[#FFFBF0] pb-12">
+      {/* Header Section */}
+      <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-[#2D1B69]">My Services 🐾</h1>
+          <p className="text-orange-600 font-bold uppercase tracking-widest text-xs mt-1">
+            Tracking happiness for {user?.name || 'your furry friends'}
+          </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-600">Completed</h3>
-          <p className="text-3xl font-bold text-green-600">{stats.completed}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-600">Upcoming</h3>
-          <p className="text-3xl font-bold text-orange-600">{stats.upcoming}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-600">Revenue</h3>
-          <p className="text-3xl font-bold text-purple-600">${stats.revenue.toLocaleString()}</p>
+        <div className="bg-yellow-400 px-6 py-2 rounded-full shadow-sm flex items-center gap-2">
+          <span className="text-[#2D1B69] font-black text-sm">Member Status:</span>
+          <span className="bg-white px-3 py-0.5 rounded-full text-[10px] font-black text-orange-600 uppercase">Pro Pet Parent</span>
         </div>
       </div>
-      
-      <div className="mt-8 bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Recent Services</h3>
-        <div className="space-y-4">
-          <div className="border-l-4 border-blue-500 pl-4">
-            <h4 className="font-semibold">Pet Training Session</h4>
-            <p className="text-gray-600">Completed on Jan 15, 2024</p>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { label: 'Total Visits', val: stats.total, color: 'text-[#2D1B69]', bg: 'bg-white', icon: '🐩' },
+          { label: 'Completed', val: stats.completed, color: 'text-green-500', bg: 'bg-white', icon: '✅' },
+          { label: 'Upcoming', val: stats.upcoming, color: 'text-orange-500', bg: 'bg-white', icon: '🗓️' },
+          { label: 'Total Spend', val: `Ksh. ${stats.revenue.toLocaleString()}`, color: 'text-purple-600', bg: 'bg-white', icon: '💰' },
+        ].map((item, i) => (
+          <div key={i} className={`${item.bg} rounded-[2.5rem] p-8 shadow-sm border border-orange-50 transform hover:-translate-y-1 transition-all`}>
+            <div className="text-3xl mb-4">{item.icon}</div>
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{item.label}</h3>
+            <p className={`text-2xl font-black ${item.color}`}>{item.val}</p>
           </div>
-          <div className="border-l-4 border-green-500 pl-4">
-            <h4 className="font-semibold">Grooming Service</h4>
-            <p className="text-gray-600">Completed on Jan 10, 2024</p>
+        ))}
+      </div>
+
+      {/* Activity Timeline */}
+      <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white rounded-[3rem] p-10 shadow-sm border border-orange-50">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-xl font-black text-[#2D1B69]">Recent Activity</h3>
+            <span className="text-xs font-bold text-orange-500 hover:underline cursor-pointer">View All</span>
           </div>
+          
+          <div className="space-y-6">
+            {[
+              { title: 'Pet Training Session', date: 'Jan 15, 2026', status: 'Completed', color: 'bg-blue-500' },
+              { title: 'Full Grooming Spa', date: 'Jan 10, 2026', status: 'Completed', color: 'bg-green-500' },
+              { title: 'Vet Consultation', date: 'Feb 12, 2026', status: 'Upcoming', color: 'bg-yellow-400' }
+            ].map((activity, i) => (
+              <div key={i} className="group flex items-center p-4 rounded-2xl hover:bg-[#FFFBF0] transition-colors">
+                <div className={`w-3 h-12 ${activity.color} rounded-full mr-6`}></div>
+                <div className="flex-grow">
+                  <h4 className="font-black text-[#2D1B69] group-hover:text-orange-600 transition-colors">{activity.title}</h4>
+                  <p className="text-gray-500 text-sm font-medium">{activity.date}</p>
+                </div>
+                <span className="px-4 py-1 rounded-full bg-gray-100 text-[10px] font-black text-gray-500 uppercase tracking-tighter">
+                  {activity.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Promo Card */}
+        <div className="bg-[#2D1B69] rounded-[3rem] p-10 text-white flex flex-col justify-center relative overflow-hidden shadow-xl shadow-purple-200">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+          <span className="text-4xl mb-4">🦴</span>
+          <h3 className="text-2xl font-black mb-4">Ready for another treat?</h3>
+          <p className="text-purple-200 text-sm mb-8 leading-relaxed">Book a grooming session today and get 10% off your next purchase!</p>
+          <button className="w-full py-4 bg-yellow-400 text-[#2D1B69] rounded-full font-black text-sm uppercase tracking-widest hover:bg-white transition-all">
+            Book Service
+          </button>
         </div>
       </div>
     </div>
