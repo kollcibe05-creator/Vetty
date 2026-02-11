@@ -24,23 +24,16 @@ import StockManagement from '../pages/admin/StockManagement';
 import ProductForm from '../pages/admin/ProductForm';
 import ServiceForm from '../pages/admin/ServiceForm';
 import ApprovalStats from '../pages/admin/ApprovalStats';
-<<<<<<< HEAD
-=======
-// import UserDashboard from '../pages/allUserDashboard';
-import DashboardOverview from '../pages/admin/DashboardOverview';
->>>>>>> fa9bc719277a2cb1a734b063a750d78dc189d702
+
+
 import OrderRow from '../pages/admin/OrderRow';
-<<<<<<< HEAD
+
 import DebugAuth from '../pages/DebugAuth';
-=======
+
 import Cart from '../pages/Cart';
-import UserDashboard from '../pages/userDashboard';
 
-<<<<<<< HEAD
->>>>>>> origin/suleiman
 
-=======
->>>>>>> fa9bc719277a2cb1a734b063a750d78dc189d702
+
 const Layout = () => (
   <div className="flex flex-col min-h-screen bg-[#FFFBF0]">
     <Navbar />
@@ -65,12 +58,12 @@ const router = createBrowserRouter([
       { path: 'products/:id', element: <ProductDetail /> },
       { path: 'services', element: <Services /> },
       { path: 'services/:id', element: <ServiceDetail /> },
-<<<<<<< HEAD
+
       { path: 'mpesa-payment', element: <MpesaForm /> },
-=======
+
       {path: 'cart', element: <Cart/>},
       { path: 'mpesaForm', element: <MpesaForm /> },
->>>>>>> origin/suleiman
+
 
       // --- 2. Shared Dashboard (History & Account) ---
       // Fix: Added lowercase roles to handle backend data inconsistencies
@@ -80,7 +73,7 @@ const router = createBrowserRouter([
           { path: 'dashboard', element: <UserDashboard /> },
           { path: 'profile', element: <Profile /> },
           { path: 'profile/account', element: <AccountDetails /> },
-<<<<<<< HEAD
+
           
           // Fix for "My Services": Supports old and new URLs to eliminate 404s
           { path: 'my-services', element: <ServiceStats /> }, 
@@ -89,11 +82,11 @@ const router = createBrowserRouter([
           // Fix for "My Orders": Prevents unintended redirects to Home
           { path: 'my-orders', element: <ProductStats /> },   
           { path: 'profile/product-stats', element: <ProductStats /> },
-=======
+
           // { path: 'profile/service-stats', element: <ServiceStats /> },
           // { path: 'profile/product-stats', element: <ProductStats /> },
           { path: 'profile/user-dashboard', element: <UserDashboard /> },
->>>>>>> origin/suleiman
+
         ],
       },
 
@@ -102,10 +95,9 @@ const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={['Admin', 'Seller', 'admin', 'seller']} />,
         children: [
           { path: 'admin', element: <DashboardOverview /> },
-<<<<<<< HEAD
-=======
+
           // { path: 'admin/test', element: <TestAdmin /> },
->>>>>>> fa9bc719277a2cb1a734b063a750d78dc189d702
+
           { path: 'admin/dashboard', element: <AdminDashboard /> },
           { path: 'admin/stock', element: <StockManagement /> },
           { path: 'admin/add-product', element: <ProductForm /> },
@@ -115,13 +107,12 @@ const router = createBrowserRouter([
         ],
       },
 
-<<<<<<< HEAD
       // --- 4. System Logic ---
       { path: 'debug', element: <DebugAuth /> },
-=======
+
       
       // { path: 'debug', element: <DebugAuth /> },
->>>>>>> fa9bc719277a2cb1a734b063a750d78dc189d702
+
       { path: '', element: <Navigate to="/home" replace /> },
       { 
         path: '*', 
