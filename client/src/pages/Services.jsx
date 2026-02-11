@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchServices, setFilters, searchServices } from '../features/serviceSlice';
-import { selectServices, selectServiceLoading, createAppointment } from '../features/serviceSlice';
+import { fetchServices, setFilters, selectServices, selectServiceLoading, createAppointment } from '../features/serviceSlice';
 import { showNotification } from '../features/uiSlice';
 import ItemCard from '../components/ItemCard';
 import CategoryFilter from '../components/CategoryFilter';
@@ -20,34 +19,31 @@ const Services = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       dispatch(fetchServices(filters));      
-    }, 400)
-    return () => clearTimeout(timer)
+    }, 400);
+    return () => clearTimeout(timer);
   }, [dispatch, filters]);
-const handleCategoryChange = (categoryName) => {
-  dispatch(setFilters({category: categoryName}))
-}
 
-  const handleSearchChange = (e) => {
-    const value = e.target.value
-    setSearchQuery(value)
-    dispatch(setFilters({search: value}))
-    // setDebouncedSearch(e.target.value);
+  const handleCategoryChange = (categoryName) => {
+    dispatch(setFilters({category: categoryName}));
   };
 
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    dispatch(setFilters({search: value}));
+  };
 
-const submitBooking = async () => {
+  const submitBooking = async () => {
     if (!bookingDate) {
       dispatch(showNotification({ type: 'error', message: 'Please select a date' }));
       return;
     }
-
     const result = await dispatch(createAppointment({
       service_id: selectedService.id,
       appointment_date: bookingDate,
-      total_price:selectedService.base_price || selectedService.price,
+      total_price: selectedService.base_price || selectedService.price,
       notes
     }));
-
     if (createAppointment.fulfilled.match(result)) {
       setSelectedService(null);
       setBookingDate('');
@@ -55,112 +51,131 @@ const submitBooking = async () => {
     }
   };
 
-  const categories = [...new Set(items.map(item => item.category?.name).filter(Boolean))];
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#FFFBF0]"> {/* Match Homepage Background */}
       
-      {/* HEADER & SEARCH SECTION */}
-        <div className="mb-10 text-center">
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-4">Our Services</h1>
-          <p className="text-gray-600 max-w-2xl mx-auto mb-8">
-            Professional solutions tailored to your needs. 
+      {/* --- HERO HEADER --- */}
+      <section className="bg-yellow-400 py-16 px-4 rounded-b-[3rem] md:rounded-b-[5rem] shadow-sm mb-12 relative overflow-hidden">
+        {/* Decorative Blob */}
+        <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-400 rounded-full opacity-20 blur-2xl"></div>
+        
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h1 className="text-5xl md:text-6xl font-black text-[#2D1B69] mb-4">
+            Our Services
+          </h1>
+          <p className="text-[#2D1B69] opacity-80 text-lg font-medium max-w-xl mx-auto mb-8">
+            Because every pet deserves the best care. From grooming to vet care, we've got you covered.
           </p>
           
-          <div className="relative max-w-md mx-auto">
+          {/* Stylized Search Bar */}
+          <div className="relative max-w-lg mx-auto transform hover:scale-105 transition-transform duration-300">
             <input 
               type="text"
-              placeholder="Search for a service..."
+              placeholder="What does your pet need today?"
               value={searchQuery}
               onChange={handleSearchChange}
-              className="w-full pl-12 pr-4 py-3 rounded-2xl border-none bg-white shadow-md focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+              className="w-full pl-14 pr-6 py-4 rounded-full border-2 border-transparent bg-white shadow-xl focus:border-orange-500 focus:ring-0 transition-all outline-none text-[#2D1B69] font-medium"
             />
-            <svg className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="absolute left-5 top-4.5 h-6 w-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
         </div>
+      </section>
 
-        {/* CATEGORY FILTER SECTION */}
-       <div className="mb-8">
-  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-gray-200 pb-4">
-    <CategoryFilter 
-      category_type="Service" 
-      // This sends the name (e.g., 'Grooming') to Redux
-      onSelectedCategory={handleCategoryChange} 
-    />
-    
-    {/* Optional: Keep the Sort Logic */}
-    <select 
-      className="bg-transparent text-sm font-medium text-gray-600 outline-none cursor-pointer"
-      onChange={(e) => dispatch(setFilters({ sortBy: e.target.value }))}
-      value={filters.sortBy}
-    >
-      <option value="name">Sort by Name</option>
-      <option value="base_price">Sort by Price</option>
-    </select>
-  </div>
-</div> 
-
-      {/* --- BOOKING MODAL/FORM (Conditional Rendering) --- */}
-      {selectedService && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
-            <h2 className="text-xl font-bold mb-4">Book {selectedService.name}</h2>
-            
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Date & Time</label>
-            <input 
-              type="datetime-local" 
-              className="w-full border rounded-lg p-2 mb-4"
-              value={bookingDate}
-              onChange={(e) => setBookingDate(e.target.value)}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* --- FILTERS SECTION --- */}
+        <div className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-6 rounded-[2rem] shadow-sm border border-orange-50">
+          <div className="flex-1 w-full">
+            <CategoryFilter 
+              category_type="Service" 
+              onSelectedCategory={handleCategoryChange} 
             />
-
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes for the provider</label>
-            <textarea 
-              className="w-full border rounded-lg p-2 mb-4"
-              placeholder="Any specific requests?"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-
-            <div className="flex gap-3">
-              <button 
-                onClick={submitBooking}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
-              >
-                Confirm Booking
-              </button>
-              <button 
-                onClick={() => setSelectedService(null)}
-                className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg font-semibold hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 bg-purple-50 px-4 py-2 rounded-full border border-purple-100">
+            <span className="text-sm font-bold text-purple-700">Sort:</span>
+            <select 
+              className="bg-transparent text-sm font-bold text-[#2D1B69] outline-none cursor-pointer"
+              onChange={(e) => dispatch(setFilters({ sortBy: e.target.value }))}
+              value={filters.sortBy}
+            >
+              <option value="name">Name (A-Z)</option>
+              <option value="base_price">Price (Low-High)</option>
+            </select>
           </div>
         </div>
-      )}
 
-      {/* Services Grid (Rest of your UI) */}
-      {!isLoading && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {items.map((service) => (
+        {/* --- SERVICES GRID --- */}
+        {!isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-20">
+            {items.map((service) => (
+              <div key={service.id} className="transform hover:-translate-y-2 transition-all duration-300">
                 <ItemCard
-                  key={service.id}
                   item={service}
                   type="service"
                   onBookNow={() => {
                     if (!isAuthenticated) {
-                      dispatch(showNotification({type: 'error', message: "Please login to book"}))
-                      return 
+                      dispatch(showNotification({type: 'error', message: "Please login to book"}));
+                      return;
                     }
-                    setSelectedService(service)
+                    setSelectedService(service);
                   }}
                 />
-              ))}
-           </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex justify-center py-20">
+            <div className="animate-bounce text-4xl">🐾</div>
+          </div>
+        )}
+      </div>
+
+      {/* --- RE-STYLED BOOKING MODAL --- */}
+      {selectedService && (
+        <div className="fixed inset-0 bg-[#2D1B69]/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl border-4 border-yellow-400 transform scale-100 animate-in fade-in zoom-in duration-300">
+            <h2 className="text-3xl font-black text-[#2D1B69] mb-2 text-center">Book Now!</h2>
+            <p className="text-orange-600 text-center font-bold mb-6">{selectedService.name}</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-[#2D1B69] mb-1 ml-2">Preferred Date</label>
+                <input 
+                  type="datetime-local" 
+                  className="w-full border-2 border-purple-50 rounded-2xl p-3 focus:border-orange-500 outline-none transition"
+                  value={bookingDate}
+                  onChange={(e) => setBookingDate(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-[#2D1B69] mb-1 ml-2">Special Notes</label>
+                <textarea 
+                  className="w-full border-2 border-purple-50 rounded-2xl p-3 focus:border-orange-500 outline-none transition h-24"
+                  placeholder="Tell us about your pet's needs..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 mt-8">
+              <button 
+                onClick={submitBooking}
+                className="w-full bg-[#2D1B69] text-white py-4 rounded-full font-black text-lg hover:bg-orange-600 transition shadow-lg active:scale-95"
+              >
+                Confirm Appointment
+              </button>
+              <button 
+                onClick={() => setSelectedService(null)}
+                className="w-full bg-gray-100 text-[#2D1B69] py-3 rounded-full font-bold hover:bg-gray-200 transition"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
