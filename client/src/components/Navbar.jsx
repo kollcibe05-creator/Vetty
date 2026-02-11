@@ -2,12 +2,8 @@ import React from 'react';
 import NavLink from './NavLink';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../features/authSlice';
-<<<<<<< HEAD
-import { Link } from 'react-router-dom';
-=======
 // import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import { selectCart } from '../features/cartSlice';
->>>>>>> origin/suleiman
 
 const Navbar = () => {
   const { isAuthenticated, user } = useSelector(state => state.auth);
@@ -70,14 +66,6 @@ const Navbar = () => {
         {/* --- AUTH ACTIONS --- */}
         <div className="flex items-center gap-3">
           {isAuthenticated ? (
-<<<<<<< HEAD
-            <button 
-              onClick={() => dispatch(logout())} 
-              className="bg-orange-600 text-white px-6 py-2 rounded-full font-bold hover:bg-orange-700 transition-transform active:scale-95 shadow-md"
-            >
-              Logout
-            </button>
-=======
             <>
               <NavLink to="/cart" className="relative p-2 hover:bg-blue-500 rounded-full transition-colors">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,7 +115,6 @@ const Navbar = () => {
                 Logout
               </button>
             </>
->>>>>>> origin/suleiman
           ) : (
             <div className="flex items-center gap-2">
               <NavLink to="/login" className="text-[#2D1B69] font-bold px-4 py-2">Login</NavLink>
