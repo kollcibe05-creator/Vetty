@@ -705,7 +705,7 @@ class MpesaPayment(Resource):
                 "PartyA": phone,
                 "PartyB": business_shortcode,
                 "PhoneNumber": phone,
-                "CallBackURL": "https://abcd-1234.ngrok.io/callback",   #needs change
+                "CallBackURL": f"{os.getenv('BASE_URL')}/payments/callback",   #needs change
                 "AccountReference": f"Order{order_id}" if order_id else "VettyPay",
                 "TransactionDesc": "Vetty Payment"
             }

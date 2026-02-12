@@ -53,12 +53,12 @@ CORS(app, supports_credentials=True, origins=[
     "http://localhost:5175",
     "http://127.0.0.1:5175",
     "https://vetty-siuq.onrender.com",
-    #ngrok to be added
+    "https://stacy-undegrading-osteopathically.ngrok-free.dev"
 ])
 
 app.config.update(
     SESSION_COOKIE_SAMESITE='Lax',
-    SESSION_COOKIE_SECURE=False  #False ~ for local development
+    SESSION_COOKIE_SECURE=True  #False ~ for local development
 )
 
 # postgresql://my_database_a8uk_user:neY6nIFxps6U7qzSbzZoCMSBmsTQi0Ho@dpg-d5kjbedactks7392rp10-a.oregon-postgres.render.com/vetty_db
