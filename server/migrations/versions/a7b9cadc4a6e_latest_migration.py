@@ -1,8 +1,8 @@
-"""initial migration with appointment status
+"""latest migration
 
-Revision ID: 7a98924702e6
+Revision ID: a7b9cadc4a6e
 Revises: 
-Create Date: 2026-02-08 01:33:49.049087
+Create Date: 2026-02-12 14:35:02.076185
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '7a98924702e6'
+revision = 'a7b9cadc4a6e'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -65,7 +65,6 @@ def upgrade():
     sa.Column('email', sa.String(length=120), nullable=False),
     sa.Column('_password_hash', sa.String(length=255), nullable=False),
     sa.Column('role_id', sa.Integer(), nullable=False),
-    sa.Column('vetting_status', sa.String(length=20), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['role_id'], ['roles.id'], name=op.f('fk_users_role_id_roles')),
@@ -82,6 +81,9 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('total_price', sa.Integer(), nullable=True),
+    sa.Column('delivery_zone_id', sa.Integer(), nullable=True),
+    sa.Column('exact_location', sa.String(), nullable=True),
+    sa.ForeignKeyConstraint(['delivery_zone_id'], ['delivery_zones.id'], name=op.f('fk_appointments_delivery_zone_id_delivery_zones')),
     sa.ForeignKeyConstraint(['service_id'], ['services.id'], name=op.f('fk_appointments_service_id_services')),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_appointments_user_id_users')),
     sa.PrimaryKeyConstraint('id')
@@ -108,6 +110,7 @@ def upgrade():
     sa.Column('delivery_zone_id', sa.Integer(), nullable=True),
     sa.Column('status', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('exact_location', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['delivery_zone_id'], ['delivery_zones.id'], name=op.f('fk_orders_delivery_zone_id_delivery_zones')),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_orders_user_id_users')),
     sa.PrimaryKeyConstraint('id')

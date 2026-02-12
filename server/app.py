@@ -1,4 +1,5 @@
 from flask import request, session 
+from sqlalchemy.orm import joinedload
 from flask_restful import Resource
 from datetime import datetime
 from functools import wraps
@@ -6,7 +7,7 @@ import base64
 import requests 
 import os 
 
-# Import from your local project files
+
 from config import app, db, api, bcrypt
 from models import (
     Product, CartItem, Cart, DeliveryZone, 
@@ -15,7 +16,6 @@ from models import (
     Appointment, Category
 )
 
-# --- DECORATORS ---
 
 def admin_required(f):
     @wraps(f)
@@ -29,7 +29,6 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- AUTH RESOURCES ---
 
 class Signup(Resource):
     def post(self):
@@ -38,26 +37,27 @@ class Signup(Resource):
         if User.query.filter_by(email=data.get("email")).first():
             return {"error": "Email already registered"}, 400
         try:
-            # Check if this is a seller registration
-            role_name = data.get('role', 'Customer')
+            role_name = data.get('role', 'User')
             if role_name == 'Admin':
                 role = Role.query.filter_by(name="Admin").first()
             else:
-                role = Role.query.filter_by(name="Customer").first()
+                role = Role.query.filter_by(name="User").first()
+            if not role:
+                return {"error": "Role not configured"}, 500
+
             
             new_user = User(
                 username=data.get('username'),
                 email=data.get('email'),
                 role=role,
-                vetting_status='not_started',
-                business_name=data.get('businessName'),
-                business_description=data.get('businessDescription')
+                # vetting_status='not_started',
+                # business_name=data.get('businessName'),
+                # business_description=data.get('businessDescription')
             )
             new_user.password = data.get('password')  
             db.session.add(new_user)
             db.session.flush() 
 
-            # Only create cart for customers, not sellers
             if role_name != 'Admin':
                 new_cart = Cart(user_id=new_user.id)
                 db.session.add(new_cart)
@@ -92,11 +92,9 @@ class CheckSession(Resource):
                 return user.to_dict(), 200
         return {"error": "Not logged in"}, 401
 
-# --- CORE BUSINESS RESOURCES ---
 
 class ProductList(Resource):
     def get(self):
-        # 1. Get query params from the URL
         category_name = request.args.get('category')
         search = request.args.get('search')
         sort_by = request.args.get('sort_by', 'name')
@@ -104,15 +102,13 @@ class ProductList(Resource):
 
         query = Product.query
 
-        # 2. Filter by Category (joining with Category table)
         if category_name:
             query = query.join(Category).filter(Category.name == category_name)
 
-        # 3. Filter by Search
+        
         if search:
             query = query.filter(Product.name.ilike(f"%{search}%"))
 
-        # 4. Sorting
         if hasattr(Product, sort_by):
             column = getattr(Product, sort_by)
             if sort_order == 'desc':
@@ -139,27 +135,35 @@ class ProductList(Resource):
     
 class ProductByID(Resource):
     def get(self, id):
-        # Fetch the product by ID
+
         product = db.session.get(Product, id)
         if not product:
             return {"error": "Product not found"}, 404
         
-        # Return the product as a dictionary
+
         return product.to_dict(), 200
 
     @admin_required
-    def patch(self, id):
-        product = db.session.get(Product, id)
+    def patch(self, id): 
+        product = Product.query.filter_by(id=id).first()
         if not product:
-            return {"error": "Product not found"}, 404
-            
-        data = request.get_json()
-        for attr in data:
-            setattr(product, attr, data.get(attr))
-            
-        db.session.commit()
-        return product.to_dict(), 200
+            return {"error": "Product not found"}, 444
 
+        data = request.get_json()
+
+        updateable_columns = ['name', 'description', 'image_url', 'price', 'stock_quantity', 'category_id']
+
+        for attr in data:
+            if attr in updateable_columns:
+                setattr(product, attr, data.get(attr))
+
+        
+        try:
+            db.session.commit()
+            return product.to_dict(), 200
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 400
     @admin_required
     def delete(self, id):
         product = db.session.get(Product, id)
@@ -170,17 +174,16 @@ class ProductByID(Resource):
         db.session.commit()
         return {}, 204
      
+
 class ServiceList(Resource):
     def get(self):
-        # Use snake_case to match what Redux is sending
         search = request.args.get('search')
-        category_name = request.args.get('category') # Add this!
+        category_name = request.args.get('category')
         sort_by = request.args.get('sort_by', 'name')
         sort_order = request.args.get('sort_order', 'asc')
 
         query = Service.query
 
-        # Filter by Category
         if category_name:
             query = query.join(Category).filter(Category.name == category_name)
 
@@ -189,71 +192,127 @@ class ServiceList(Resource):
 
         if hasattr(Service, sort_by):
             column = getattr(Service, sort_by)
-            query = query.order_by(column.desc() if sort_order == 'desc' else column.asc())
+            query = query.order_by(
+                column.desc() if sort_order == 'desc' else column.asc()
+            )
 
         services = query.all()
-        return [s.to_dict() for s in services], 200
+        return [s.to_dict(rules=('category',)) for s in services], 200
+
+
+    @admin_required
+    def post(self):
+        data = request.get_json()
+
+        new_service = Service(
+            name=data.get("name"),
+            description=data.get("description"),
+            base_price=data.get("base_price"),
+            image_url=data.get("image_url"),
+            category_id=data.get("category_id"),
+        )
+
+        db.session.add(new_service)
+        db.session.commit()
+
+        return new_service.to_dict(rules=('category',)), 201
+
+
 class CartResource(Resource):
     def get(self):
         user_id = session.get('user_id')
-        if not user_id: return {"error": "Unauthorized"}, 401
-        
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+
         cart = Cart.query.filter_by(user_id=user_id).first()
-        if not cart: return {"cart_items": [], "total_amount": 0}, 200
-        
-        total_amount = sum(item.quantity * item.product.price for item in cart.cart_items)
+        if not cart:
+            return {"items": [], "total_amount": 0}, 200
+
+        total_amount = sum(
+            item.quantity * item.product.price
+            for item in cart.cart_items
+        )
+
         return {
-            "cart_items": [item.to_dict() for item in cart.cart_items],
+            "items": [item.to_dict(rules=('-cart',)) for item in cart.cart_items],
             "total_amount": total_amount
         }, 200
+
+
+class CartItemResource(Resource):
+
     def post(self):
         user_id = session.get('user_id')
         if not user_id:
             return {"error": "Unauthorized"}, 401
-        
-        data = request.get_json()
-        product_id = data.get('product_id')
-        quantity = data.get('quantity', 1)
 
-        # 1. Find or create the user's cart
+        data = request.get_json()
+
+        product_id = data.get("product_id")
+        product = db.session.get(Product, product_id)
+        if not product:
+            return {"error": "Product not found"}, 404
+
+        quantity = data.get("quantity", 1)
+        if quantity > product.stock_quantity:
+            return {"error": "Insufficient stock"}, 400
+
+
         cart = Cart.query.filter_by(user_id=user_id).first()
         if not cart:
             cart = Cart(user_id=user_id)
             db.session.add(cart)
-            db.session.flush()
-
-        # 2. Check if item already in cart
-        item = CartItem.query.filter_by(cart_id=cart.id, product_id=product_id).first()
-        if item:
-            item.quantity += quantity
-        else:
-            item = CartItem(cart_id=cart.id, product_id=product_id, quantity=quantity)
-            db.session.add(item)
-        
-        db.session.commit()
-        return item.to_dict(), 201
-
-    def delete(self):
-        user_id = session.get('user_id')
-        if not user_id: return {"error": "Unauthorized"}, 401
-        cart = Cart.query.filter_by(user_id=user_id).first()
-        if cart:
-            CartItem.query.filter_by(cart_id=cart.id).delete()
             db.session.commit()
-        return {"message": "Cart cleared"}, 200
 
-class CartItemResource(Resource):
+        existing_item = CartItem.query.filter_by(
+            cart_id=cart.id,
+            product_id=product_id
+        ).first()
+
+        if existing_item:
+            existing_item.quantity += quantity
+        else:
+            new_item = CartItem(
+                cart_id=cart.id,
+                product_id=product_id,
+                quantity=quantity
+            )
+            db.session.add(new_item)
+
+        db.session.commit()
+
+        return new_item.to_dict(), 201
+
+    def delete(self, item_id):
+        user_id = session.get('user_id')
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+        cart = Cart.query.filter_by(user_id=user_id).first()
+        if not cart:
+            return {"error": "Unauthorized"}, 401
+
+        item = CartItem.query.filter_by(id=item_id, cart_id=cart.id).first()
+        if not item:
+            return {"error": "Item not found"}, 404
+
+        db.session.delete(item)
+        db.session.commit()
+
+        return {"message": "Item removed"}, 200
     def patch(self, item_id):
         user_id = session.get('user_id')
         if not user_id: return {"error": "Unauthorized"}, 401
         
-        item = CartItem.query.get(item_id)
-        if not item: return {"error": "Cart item not found"}, 404
-        
-        # Verify the cart item belongs to the user
         cart = Cart.query.filter_by(user_id=user_id).first()
-        if not cart or item.cart_id != cart.id: 
+        if not cart:
+            return {"error": "Cart not found"}, 404
+        item = CartItem.query.filter_by(id=item_id, cart_id=cart.id).first()
+        if not item: return {"error": "Cart item not found"}, 404
+
+        if item.cart_id != cart.id: 
             return {"error": "Unauthorized"}, 401
+
+        
         
         data = request.get_json()
         quantity = data.get('quantity')
@@ -264,75 +323,97 @@ class CartItemResource(Resource):
             return {"error": "Invalid quantity"}, 400
         
         db.session.commit()
-        return item.to_dict(), 200
-    
-    def delete(self, item_id):
-        user_id = session.get('user_id')
-        if not user_id: return {"error": "Unauthorized"}, 401
-        
-        item = CartItem.query.get(item_id)
-        if not item: return {"error": "Cart item not found"}, 404
-        
-        # Verify the cart item belongs to the user
-        cart = Cart.query.filter_by(user_id=user_id).first()
-        if not cart or item.cart_id != cart.id: 
-            return {"error": "Unauthorized"}, 401
-        
-        db.session.delete(item)
-        db.session.commit()
-        return {"message": "Item removed from cart"}, 200
+        return item.to_dict(), 200    
+
+
 
 class Checkout(Resource):
     def post(self):
         user_id = session.get("user_id")
-        if not user_id: return {"error": "Unauthorized"}, 401
-        
+        if not user_id:
+            return {"error": "Unauthorized. Please log in to checkout."}, 401
+
+        data = request.get_json()
+        delivery_zone_id = data.get("delivery_zone_id")
+        exact_location = data.get("exact_location")
+
+
         cart = Cart.query.filter_by(user_id=user_id).first()
         if not cart or not cart.cart_items:
-            return {"error": "Cart is empty"}, 400
-            
-        try:
-            new_order = Order(user_id=user_id, status="Pending")
-            db.session.add(new_order)
-            db.session.flush()
+            return {"error": "Your cart is empty"}, 400
 
-            db.session.add(OrderStatusHistory(order=new_order, status="Pending"))
-            
-            # Check all products exist and have sufficient stock before proceeding
+        try:
+
+            delivery_fee = 0
+            if delivery_zone_id:
+                zone = db.session.get(DeliveryZone, delivery_zone_id)
+                if zone:
+                    delivery_fee = zone.delivery_fee
+
+
+            new_order = Order(
+                user_id=user_id,
+                delivery_zone_id=delivery_zone_id,
+                exact_location=exact_location,
+                status="Pending"
+            )
+            db.session.add(new_order)
+            db.session.flush() 
+
+            total_product_price = 0
+
+
             for item in cart.cart_items:
-                # Verify product still exists in database
-                product = db.session.get(Product, item.product_id)
-                if not product:
-                    db.session.rollback()
-                    return {"error": f"Product no longer available"}, 400
-                
-                # Check stock availability
+                product = item.product
+
+
                 if product.stock_quantity < item.quantity:
                     db.session.rollback()
-                    return {"error": f"Insufficient stock for {product.name}"}, 400
-            
-            # All checks passed - proceed with stock subtraction and order creation
-            for item in cart.cart_items:
-                product = Product.query.get(item.product_id)
-                
-                # Subtract stock quantity
-                product.stock_quantity -= item.quantity
-                
-                # Create order item
-                db.session.add(OrderItem(
-                    order=new_order, product_id=item.product_id,
-                    quantity=item.quantity, unit_price=item.product.price
-                ))
+                    return {
+                        "error": f"Insufficient stock for {product.name}. Only {product.stock_quantity} left."
+                    }, 400
 
-            # Clear cart and commit transaction
-            CartItem.query.filter_by(cart_id=cart.id).delete()
-            db.session.commit()
-            return new_order.to_dict(), 201
+                item_total = item.quantity * product.price
+                total_product_price += item_total
+
+
+                product.stock_quantity -= item.quantity
+
+                order_item = OrderItem(
+                    order_id=new_order.id,
+                    product_id=item.product_id,
+                    quantity=item.quantity,
+                    unit_price=product.price 
+                )
+                db.session.add(order_item)
+
+                if product.stock_quantity <= 5:
+                    existing_alert = InventoryAlert.query.filter_by(product_id=product.id).first()
+                    if not existing_alert:
+                        db.session.add(InventoryAlert(product_id=product.id))
+
+
+            status_history = OrderStatusHistory(
+                order_id=new_order.id,
+                status="Pending"
+            )
+            db.session.add(status_history)
+
+
             
+            CartItem.query.filter_by(cart_id=cart.id).delete()
+            
+            db.session.commit()
+
+            return {
+                "message": "Order placed successfully",
+                "order_id": new_order.id,                
+                "delivery_fee": float(delivery_fee)
+            }, 201
+
         except Exception as e:
             db.session.rollback()
-            return {"error": str(e)}, 422
-        
+            return {"error": "An error occurred during checkout", "details": str(e)}, 500   
 class AppointmentList(Resource):
     def post(self):
         user_id = session.get('user_id')
@@ -342,25 +423,31 @@ class AppointmentList(Resource):
         data = request.get_json()
         
         try:
-            # Convert string date from frontend to Python datetime object
             appointment_date_str = data.get("appointment_date")
             if not appointment_date_str:
                 return {"error": "Appointment date is required"}, 400
-                
-            # Handle frontend datetime-local format (e.g., "2026-02-10T01:10")
+
             appointment_date = datetime.fromisoformat(appointment_date_str)
             
             if appointment_date < datetime.now():
                 return {"error": "Appointment date cannot be in the past"}, 400
+            service_id = data.get("service_id")
+            if not service_id:
+                return {"error": "Service ID is required"}, 400
+
+            service = Service.query.get(service_id)
+            if not service:
+                return {"error": "Service not found"}, 404
 
             new_appointment = Appointment(
                 user_id=user_id,
                 service_id=data.get('service_id'),
                 appointment_date=appointment_date,
                 notes=data.get("notes"),
-                total_price=data.get('total_price'),
+                total_price=service.base_price,
                 delivery_zone_id=data.get('delivery_zone_id'),
-                status='Scheduled' # Initial status matching model validation
+                exact_location = data.get('exact_location'),
+                status='Scheduled' 
             )
             
             db.session.add(new_appointment)
@@ -373,15 +460,53 @@ class AppointmentList(Resource):
 
 
 
-# ... existing imports and classes
 
 class ServiceByID(Resource):
+
     def get(self, id):
-        # Use db.session.get() which is the modern SQLAlchemy way
         service = db.session.get(Service, id)
         if not service:
             return {"error": "Service not found"}, 404
-        return service.to_dict(), 200
+
+        return service.to_dict(rules=('category',)), 200
+
+
+    @admin_required
+    def patch(self, id):
+        service = db.session.get(Service, id)
+        if not service:
+            return {"error": "Service not found"}, 404
+
+        data = request.get_json()
+
+        allowed_fields = [
+            "name",
+            "description",
+            "base_price",
+            "image_url",
+            "category_id"
+        ]
+
+        for field in allowed_fields:
+            if field in data:
+                setattr(service, field, data[field])
+
+        db.session.commit()
+        return service.to_dict(rules=('category',)), 200
+
+
+    @admin_required
+    def delete(self, id):
+        service = db.session.get(Service, id)
+        if not service:
+            return {"error": "Service not found"}, 404
+
+        db.session.delete(service)
+        db.session.commit()
+
+        return {"message": "Service deleted"}, 200
+
+    
 class CategoryList(Resource):
     def get(self):
         categories = Category.query.all()
@@ -414,7 +539,7 @@ class DeliveryZoneList(Resource):
         db.session.commit()
         return new_zone.to_dict(), 201
 
-# --- USER HISTORY RESOURCES ---
+
 
 class UserOrders(Resource):
     def get(self):
@@ -430,10 +555,54 @@ class UserAppointments(Resource):
         user_id = session.get('user_id')
         if not user_id:
             return {"error": "Unauthorized"}, 401
-        
-        # This shows the status (Scheduled, Completed, Cancelled)
+
         appointments = Appointment.query.filter_by(user_id=user_id).order_by(Appointment.appointment_date.desc()).all()
         return [a.to_dict() for a in appointments], 200
+
+class UserProfile(Resource):
+    def get(self):
+        """Fetch current logged-in user's profile"""
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+        
+        user = db.session.get(User, user_id)
+        if not user:
+            return {"error": "User not found"}, 404
+        
+        return user.to_dict(), 200
+
+    def patch(self):
+        """Update current user's profile"""
+        user_id = session.get("user_id")
+        if not user_id:
+            return {"error": "Unauthorized"}, 401
+
+        user = db.session.get(User, user_id)
+        if not user:
+            return {"error": "User not found"}, 404
+
+        data = request.get_json()
+
+
+        allowed_fields = ["username", "email", "password"]
+        for field in allowed_fields:
+            if field in data:
+                try:
+                    if field == "password":
+                        user.password = data[field]  
+                    else:
+                        setattr(user, field, data[field])
+                except ValueError as e:
+                    return {"error": str(e)}, 400
+
+        try:
+            db.session.commit()
+            return user.to_dict(), 200
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500
+
 
 
 
@@ -448,7 +617,7 @@ class AdminAppointmentResource(Resource):
             data = request.get_json()
             new_status = data.get('status')
             
-            if new_status in ['Completed', 'Cancelled']:
+            if new_status in ['Scheduled', 'Pending', 'Completed', 'Cancelled', 'Approved']:
                 appointment.status = new_status
                 db.session.commit()
                 return appointment.to_dict(), 200
@@ -475,7 +644,6 @@ class AdminAppointmentResource(Resource):
             return {"error": str(e)}, 500
 
 
-# --- ADMIN APPOINTMENT MANAGEMENT ---
 
 class AdminAppointmentList(Resource):
     @admin_required
@@ -518,6 +686,11 @@ class MpesaPayment(Resource):
         # Proper Password Generation
         data_to_encode = business_shortcode + passkey + timestamp
         password = base64.b64encode(data_to_encode.encode()).decode('utf-8')
+
+
+        ##########ADDED###################
+        if not order_id:
+            return {"error": "Order ID required"}, 400
 
         try:
             access_token = get_mpesa_access_token()
@@ -578,7 +751,7 @@ class MpesaCallback(Resource):
         
         payment = Payment.query.filter_by(checkout_request_id=checkout_id).first()
         if payment and result_code == 0:
-            payment.status = 'Completed'
+            payment.status = 'completed'
             
             if payment.order:
                 payment.order.status = 'Paid'
@@ -592,7 +765,7 @@ class MpesaCallback(Resource):
 class AdminStats(Resource):
     @admin_required
     def get(self):
-        rev = db.session.query(db.func.sum(Payment.amount)).filter_by(status='Completed').scalar() or 0
+        rev = db.session.query(db.func.sum(Payment.amount)).filter_by(status='completed').scalar() or 0
         return {
             "revenue": float(rev),
             "pending_orders": Order.query.filter_by(status='Pending').count(),
@@ -600,6 +773,35 @@ class AdminStats(Resource):
         }, 200
 
 # --- ADMIN INVENTORY ---
+class DeliveryZoneResource(Resource):
+
+    @admin_required
+    def patch(self, id):
+        zone = db.session.get(DeliveryZone, id)
+        if not zone:
+            return {"error": "Delivery zone not found"}, 404
+
+        data = request.get_json()
+
+        if "zone_name" in data:
+            zone.zone_name = data["zone_name"]
+
+        if "delivery_fee" in data:
+            zone.delivery_fee = data["delivery_fee"]
+
+        db.session.commit()
+        return zone.to_dict(), 200
+
+    @admin_required
+    def delete(self, id):
+        zone = db.session.get(DeliveryZone, id)
+        if not zone:
+            return {"error": "Delivery zone not found"}, 404
+
+        db.session.delete(zone)
+        db.session.commit()
+        return {"message": "Delivery zone deleted"}, 200
+
 
 class AdminInventory(Resource):
     @admin_required
@@ -621,17 +823,206 @@ class AdminInventory(Resource):
 class AdminOrders(Resource):
     @admin_required
     def get(self):
-        orders = Order.query.all()
-        return [order.to_dict() for order in orders], 200
+        orders = Order.query.options(joinedload(Order.user)).all()
+        return [order.to_dict(rules=('user', '-user.orders')) for order in orders], 200
+
+class AdminOrderResource(Resource):
+    @admin_required
+    def patch(self, order_id):
+        order = db.session.get(Order, order_id)
+        if not order:
+            return {"error": "Order not found"}, 404
+
+        data = request.get_json()
+        status = data.get("status")
+        valid_statuses = ["Pending", "Approved",  "Cancelled", "Out for Delivery", "Delivered", 'Paid']
+        if status not in valid_statuses:
+            return {"error": "Invalid status"}, 400
+
+        # --- Reduce stock when moving to Out for Delivery ---
+        if status == "Out for Delivery" and order.status not in ["Out for Delivery", "Delivered"]:
+            for order_item in order.order_items:
+                product = order_item.product
+                if product:
+                    product.stock_quantity -= order_item.quantity
+                    if product.stock_quantity < 0:
+                        product.stock_quantity = 0
+
+                    if product.stock_quantity <= 5:
+                        if not InventoryAlert.query.filter_by(product_id=product.id).first():
+                            db.session.add(InventoryAlert(product_id=product.id))
+
+        order.status = status
+        db.session.commit()
+        return order.to_dict(), 200
+
+    @admin_required
+    def delete(self, order_id):
+        order = db.session.get(Order, order_id)
+        if not order:
+            return {"error": "Order not found"}, 404
+
+        db.session.delete(order)
+        db.session.commit()
+        return {"message": "Order deleted"}, 200
 
 # --- ADMIN APPROVALS ---
 
 class AdminApprovals(Resource):
     @admin_required
     def get(self):
-        # Get pending orders that need approval
         pending_orders = Order.query.filter_by(status='Pending').all()
         return [order.to_dict() for order in pending_orders], 200
+
+
+
+
+class AdminUsers(Resource):
+
+    @admin_required
+    def get(self):
+        users = User.query.all()
+
+        return [
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role.name if user.role else "user"
+            }
+            for user in users
+        ], 200
+
+class AdminUserDetail(Resource):
+
+    @admin_required
+    def patch(self, user_id):
+        user = User.query.get_or_404(user_id)
+        data = request.get_json()
+
+        if "role_id" in data:
+            user.role_id = data["role_id"]
+
+        db.session.commit()
+
+        return {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role.name
+        }, 200
+
+    @admin_required
+    def delete(self, user_id):
+        user = User.query.get_or_404(user_id)
+
+
+        Order.query.filter_by(user_id=user.id).delete()
+        Appointment.query.filter_by(user_id=user.id).delete()
+        Payment.query.filter_by(user_id=user.id).delete()
+        Review.query.filter_by(user_id=user.id).delete()
+        Cart.query.filter_by(user_id=user.id).delete()
+
+        db.session.delete(user)
+        db.session.commit()
+
+        return {"message": "User deleted"}, 200
+
+from flask_restful import Resource
+from flask import request
+from models import Review, db
+from flask import jsonify
+
+class ReviewResource(Resource):
+    def get(self):
+        """
+        GET /reviews
+        Optional query params:
+          - product_id
+          - service_id
+        """
+        product_id = request.args.get("product_id", type=int)
+        service_id = request.args.get("service_id", type=int)
+
+        query = Review.query
+
+        if product_id:
+            query = query.filter_by(product_id=product_id)
+        if service_id:
+            query = query.filter_by(service_id=service_id)
+
+        reviews = query.all()
+        return jsonify([r.to_dict() for r in reviews])
+
+    def post(self):
+        """
+        POST /reviews
+        Body example:
+        {
+            "user_id": 1,
+            "product_id": 2,        # optional if service_id is given
+            "service_id": null,
+            "rating": 4,
+            "comment": "Great product!"
+        }
+        """
+        data = request.get_json()
+        review = Review(
+            user_id=data.get("user_id"),
+            product_id=data.get("product_id"),
+            service_id=data.get("service_id"),
+            rating=data.get("rating"),
+            comment=data.get("comment")
+        )
+        db.session.add(review)
+        db.session.commit()
+        return review.to_dict(), 201
+
+
+class AdminDashboard(Resource):
+    @admin_required
+    def get(self):
+        try:
+            summary = {
+                "total_users": User.query.count(),
+                "total_products": Product.query.count(),
+                "total_services": Service.query.count(),
+                "total_orders": Order.query.count(),
+                "total_appointments": Appointment.query.count(),
+                "low_stock_products": Product.query.filter(Product.stock_quantity < 10).count()
+            }
+
+
+            rev_query = db.session.query(db.func.sum(Payment.amount)).filter(Payment.status == "completed").scalar()
+            summary["total_revenue"] = float(rev_query) if rev_query else 0.0
+
+            order_status_counts = db.session.query(Order.status, db.func.count(Order.id)).group_by(Order.status).all()
+            order_status_data = {status: count for status, count in order_status_counts}
+
+
+            sales_chart = []
+            try:
+
+                date_format = db.func.strftime("%Y-%m", Payment.created_at)
+                monthly_sales = db.session.query(date_format, db.func.sum(Payment.amount))\
+                    .filter(Payment.status == "completed")\
+                    .group_by(date_format).all()
+                
+                sales_chart = [{"month": str(m), "revenue": float(a or 0)} for m, a in monthly_sales]
+            except Exception as e:
+                print(f"Chart Error: {e}") 
+                sales_chart = [{"month": "No Data", "revenue": 0}]
+
+            return {
+                "summary": summary,
+                "order_status_breakdown": order_status_data,
+                "monthly_sales": sales_chart
+            }, 200
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc() 
+            return {"error": str(e)}, 500
 
 # --- API ROUTE REGISTRATION ---
 
@@ -642,9 +1033,9 @@ api.add_resource(CheckSession, '/check_session')
 api.add_resource(ServiceList, '/services')
 api.add_resource(ProductList, '/products')
 
-api.add_resource(CartResource, '/cart', '/cart-items') # Mapped to both to fix your CORS error
-api.add_resource(CartItemResource, '/cart-items/<int:item_id>') # For individual cart item operations
-api.add_resource(Checkout, "/checkout", "/check-out") # Support both routes
+api.add_resource(CartResource, '/cart') 
+api.add_resource(CartItemResource, '/cart-items', '/cart-items/<int:item_id>') # For individual cart item operations
+api.add_resource(Checkout, "/checkout", "/check-out") 
 api.add_resource(AppointmentList, '/appointments')
 api.add_resource(AdminAppointmentList, '/admin/appointments')
 api.add_resource(AdminAppointmentResource, '/admin/appointments/<int:appointment_id>')
@@ -663,6 +1054,19 @@ api.add_resource(DeliveryZoneList, '/delivery-zones')
 
 api.add_resource(UserOrders, '/my-orders')
 api.add_resource(UserAppointments, '/my-appointments')
+api.add_resource(UserProfile, '/profile')
+api.add_resource(AdminOrderResource, "/admin/orders/<int:order_id>")
+api.add_resource(AdminUsers, "/admin/users")
+api.add_resource(AdminUserDetail, "/admin/users/<int:user_id>")
+api.add_resource(DeliveryZoneResource,'/delivery-zones/<int:id>')
+api.add_resource(ReviewResource, "/reviews")
+
+api.add_resource(AdminDashboard, "/admin/dashboard")
+
+
+
+
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

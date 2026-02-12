@@ -9,14 +9,10 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 
-# =========================
-# LOAD ENV VARIABLES
-# =========================
+
 load_dotenv()
 
-# =========================
-# APP CONFIG
-# =========================
+
 app = Flask(__name__)
 
 # app.secret_key = os.getenv('SECRET_KEY')
@@ -28,9 +24,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///app.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
-# =========================
-# DATABASE SETUP
-# =========================
+
 metadata = MetaData(
     naming_convention={
         "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
@@ -39,9 +33,6 @@ metadata = MetaData(
 
 db = SQLAlchemy(metadata=metadata)
 
-# =========================
-# EXTENSIONS
-# =========================
 migrate = Migrate(app, db)
 db.init_app(app)
 
@@ -60,5 +51,5 @@ CORS(app, supports_credentials=True, origins=[
 
 app.config.update(
     SESSION_COOKIE_SAMESITE='Lax',
-    SESSION_COOKIE_SECURE=False  # Set to False for local development
+    SESSION_COOKIE_SECURE=False  #False ~ for local development
 )
