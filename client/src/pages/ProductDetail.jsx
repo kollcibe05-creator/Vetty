@@ -66,7 +66,6 @@ const avgRating = productReviews.length
     window.scrollTo(0, 0);
   }, [id]);
 
-  // 3. Memoized Related Products
   const relatedProducts = useMemo(() => {
     if (!product || !allProducts.length) return [];
     return allProducts
@@ -79,8 +78,7 @@ const avgRating = productReviews.length
       dispatch(addToCart({ productId: product.id, quantity: selectedQuantity }));
       dispatch(showNotification({
         type: 'success',
-        title: 'Success!',
-        message: `${product.name} added to cart`,
+        message: `Woot! ${product.name} is now in your cart! 🐾`,
       }));
     }
   };
@@ -88,9 +86,9 @@ const avgRating = productReviews.length
   // Loading 
   if (isLoading) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
-        <p className="text-gray-500 font-medium animate-pulse">Loading details...</p>
+      <div className="min-h-screen bg-[#FFFBF0] flex flex-col items-center justify-center">
+        <div className="animate-bounce text-6xl mb-4">🦴</div>
+        <p className="text-[#2D1B69] font-black animate-pulse uppercase tracking-widest">Fetching the good stuff...</p>
       </div>
     );
   }
@@ -98,14 +96,16 @@ const avgRating = productReviews.length
   // Not Found
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-        <div className="text-center bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-md w-full">
-          <div className="bg-red-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800">Product Not Found</h2>
-          <button onClick={() => navigate('/products')} className="mt-6 w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
-            Back to Store
+      <div className="min-h-screen bg-[#FFFBF0] flex items-center justify-center p-4">
+        <div className="text-center bg-white p-12 rounded-[3rem] shadow-xl border-4 border-yellow-400 max-w-md w-full">
+          <span className="text-6xl block mb-4">😿</span>
+          <h2 className="text-3xl font-black text-[#2D1B69] mb-4">Lost in the Dog Park?</h2>
+          <p className="text-gray-500 mb-8">We couldn't find that product anywhere.</p>
+          <button 
+            onClick={() => navigate('/products')} 
+            className="w-full py-4 bg-[#2D1B69] text-white rounded-full font-black hover:bg-orange-600 transition-all shadow-lg"
+          >
+            Back to Shop
           </button>
         </div>
       </div>
@@ -113,43 +113,52 @@ const avgRating = productReviews.length
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
-      {/* Navbar / Breadcrumb */}
-      <nav className="bg-white border-b sticky top-0 z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center text-sm">
-          <button onClick={() => navigate('/products')} className="text-gray-500 hover:text-blue-600 font-medium transition-colors">
-            &larr; Back to Products
+    <div className="min-h-screen bg-[#FFFBF0] pb-20">
+      {/* Breadcrumb Navbar */}
+      <nav className="bg-white/50 backdrop-blur-md sticky top-0 z-20 border-b border-orange-100">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center">
+          <button 
+            onClick={() => navigate('/products')} 
+            className="group flex items-center gap-2 text-[#2D1B69] font-bold hover:text-orange-600 transition-colors"
+          >
+            <span className="bg-orange-100 p-1 rounded-full group-hover:bg-orange-500 group-hover:text-white transition-all">&larr;</span> 
+            Back to Products
           </button>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+      <main className="max-w-7xl mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           
-          {/* Left: Image */}
+          {/* LEFT: IMAGE SECTION */}
           <div className="lg:col-span-7">
-            <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 aspect-square relative group">
-              {product.image_url ? (
-                <img 
-                  src={product.image_url} 
-                  alt={product.name} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-                  <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                </div>
-              )}
+            <div className="relative">
+              {/* Decorative Background Blob */}
+              <div className="absolute -top-4 -left-4 w-24 h-24 bg-yellow-400 rounded-full -z-10 opacity-30"></div>
+              
+              <div className="bg-white rounded-[3rem] overflow-hidden shadow-sm border-8 border-white aspect-square relative group">
+                {product.image_url ? (
+                  <img 
+                    src={product.image_url} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-200">
+                    <span className="text-9xl">🐾</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Right: Details */}
-          <div className="lg:col-span-5 flex flex-col h-full">
-            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 flex-1">
+          {/* RIGHT: DETAILS SECTION */}
+          <div className="lg:col-span-5">
+            <div className="bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-orange-50">
               
               {/* Category Badge */}
-              <div className="mb-4">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-600">
+              <div className="mb-6">
+                <span className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-yellow-400 text-[#2D1B69]">
                   {product.category?.name || 'General'}
                 </span>
               </div>
@@ -172,37 +181,55 @@ const avgRating = productReviews.length
                 <p>{product.description}</p>
               </div>
 
-              {/* Quantity & Actions */}
-              <div className="mt-auto space-y-6">
+              <div className="space-y-4 mb-10">
+                <h3 className="text-xs font-black text-[#2D1B69] uppercase tracking-widest flex items-center gap-2">
+                  <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+                  Product Details
+                </h3>
+                <p className="text-gray-600 leading-relaxed font-medium">
+                  {product.description}
+                </p>
+              </div>
+
+              {/* ACTION AREA */}
+              <div className="bg-[#FFFBF0] p-6 rounded-[2rem] border border-orange-100 space-y-6">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-gray-500">Quantity</span>
-                  <span className={`text-xs font-bold px-2 py-1 rounded ${product.stock_quantity > 0 ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'}`}>
-                    {product.stock_quantity > 0 ? `${product.stock_quantity} Available` : 'Out of Stock'}
+                  <span className="text-sm font-black text-[#2D1B69] uppercase">Quantity</span>
+                  <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider ${
+                    product.stock_quantity > 0 ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
+                  }`}>
+                    {product.stock_quantity > 0 ? `${product.stock_quantity} In Stock` : 'Out of Stock'}
                   </span>
                 </div>
 
                 {product.stock_quantity > 0 && (
-                  <div className="flex items-center border border-gray-200 rounded-xl w-32">
-                    <button 
-                      onClick={() => setSelectedQuantity(q => Math.max(1, q - 1))}
-                      className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 text-gray-500 font-bold text-lg"
-                    >−</button>
-                    <div className="flex-1 text-center font-bold text-gray-900">{selectedQuantity}</div>
-                    <button 
-                      onClick={() => setSelectedQuantity(q => Math.min(product.stock_quantity, q + 1))}
-                      className="w-10 h-10 flex items-center justify-center hover:bg-gray-50 text-gray-500 font-bold text-lg"
-                    >+</button>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center bg-white border-2 border-orange-100 rounded-full p-1 w-36 shadow-inner">
+                      <button 
+                        onClick={() => setSelectedQuantity(q => Math.max(1, q - 1))}
+                        className="w-10 h-10 flex items-center justify-center hover:bg-orange-500 hover:text-white rounded-full text-[#2D1B69] font-black transition-all"
+                      >−</button>
+                      <div className="flex-1 text-center font-black text-[#2D1B69]">{selectedQuantity}</div>
+                      <button 
+                        onClick={() => setSelectedQuantity(q => Math.min(product.stock_quantity, q + 1))}
+                        className="w-10 h-10 flex items-center justify-center hover:bg-orange-500 hover:text-white rounded-full text-[#2D1B69] font-black transition-all"
+                      >+</button>
+                    </div>
+
+                    <button
+                      onClick={handleAddToCart}
+                      className="flex-1 py-4 bg-[#2D1B69] text-white rounded-full font-black text-lg shadow-lg hover:bg-orange-600 transition-all transform active:scale-95"
+                    >
+                      Add to Cart
+                    </button>
                   </div>
                 )}
 
-                <button
-                  onClick={handleAddToCart}
-                  disabled={product.stock_quantity <= 0 || !product.stock_quantity}
-                  className="w-full py-4 px-6 rounded-xl font-bold text-lg shadow-lg transition-all duration-200 transform active:scale-[0.98] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed
-                    bg-blue-600 hover:bg-blue-700 text-white hover:shadow-blue-200"
-                >
-                  {product.stock_quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
-                </button>
+                {!product.stock_quantity && (
+                  <div className="bg-red-50 text-red-500 p-4 rounded-2xl text-center font-bold">
+                    This item is currently out of paw-reach!
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -211,14 +238,14 @@ const avgRating = productReviews.length
           <ReviewSection productId={id} />
         </section>
 
-        {/* Related Products */}
+        {/* RELATED PRODUCTS */}
         {relatedProducts.length > 0 && (
-          <section className="mt-20">
-            <div className="flex items-center space-x-4 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">Similar Products</h2>
-              <div className="h-px flex-1 bg-gray-200"></div>
+          <section className="mt-24">
+            <div className="flex flex-col items-center mb-12">
+              <h2 className="text-3xl font-black text-[#2D1B69] mb-2">You Might Also Wag About</h2>
+              <div className="h-1.5 w-24 bg-yellow-400 rounded-full"></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
               {relatedProducts.map((p) => (
                 <ItemCard key={p.id} item={p} type="product" />
               ))}

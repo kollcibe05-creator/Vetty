@@ -20,7 +20,7 @@ export const fetchCart = createAsyncThunk('cart/fetch', async (_, { rejectWithVa
       return rejectWithValue('Not authenticated');
     }
     return rejectWithValue(err.response?.data?.error || 'Failed to fetch cart');
-  }
+  } 
 });
 
 export const addToCart = createAsyncThunk('cart/add', async ({ productId, quantity }, { rejectWithValue, dispatch }) => {
