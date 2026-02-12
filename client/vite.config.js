@@ -12,4 +12,13 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
     },
   },
+  server: {
+    proxy: {
+      '/': {
+        target: 'http://127.0.0.1:5555',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
 })
