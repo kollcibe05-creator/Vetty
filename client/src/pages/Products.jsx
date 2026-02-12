@@ -8,7 +8,6 @@ import CategoryFilter from '../components/CategoryFilter';
 import { fetchReviews, selectReviews } from '../features/reviewSlice' //, setFilters
 
 
-
 const Products = () => {
   const dispatch = useDispatch();
   const { items, filters } = useSelector(selectProducts);
