@@ -58,7 +58,6 @@ export const getProfile = createAsyncThunk(
   }
 );
 
-import api from '../axios'; // Ensure this points to your axios.js file
 
 export const updateProfile = createAsyncThunk(
   "auth/updateProfile",
