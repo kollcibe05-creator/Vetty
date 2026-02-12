@@ -13,14 +13,19 @@ from sqlalchemy import MetaData
 load_dotenv()
 
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_url_path='',
+    static_folder='../client/dist',  
+    template_folder='../client/dist'
+    )
 
 # app.secret_key = os.getenv('SECRET_KEY')
 app.secret_key = os.getenv('SECRET_KEY')
 # app.secret_key = b'\xf2\x9e\xa7\xea+b]\xe04\xfd\xcd?a_\xf4:'
 
 
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///app.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
@@ -53,3 +58,13 @@ app.config.update(
     SESSION_COOKIE_SAMESITE='Lax',
     SESSION_COOKIE_SECURE=False  #False ~ for local development
 )
+
+# postgresql://my_database_a8uk_user:neY6nIFxps6U7qzSbzZoCMSBmsTQi0Ho@dpg-d5kjbedactks7392rp10-a.oregon-postgres.render.com/vetty_db
+
+@app.route('/')
+def index():
+    return render_template("index.html")
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("index.html")
