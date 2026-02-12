@@ -2,8 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchServices, setFilters, searchServices } from '../features/serviceSlice';
-import { selectServices, selectServiceLoading, createAppointment } from '../features/serviceSlice';
+import {
+  fetchServices,
+  setFilters,
+  selectServices,
+  selectServiceLoading,
+  createAppointment
+} from '../features/serviceSlice';
 import { showNotification } from '../features/uiSlice';
 import ItemCard from '../components/ItemCard';
 import CategoryFilter from '../components/CategoryFilter';
