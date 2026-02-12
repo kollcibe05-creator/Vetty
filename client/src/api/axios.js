@@ -35,12 +35,12 @@ const isProduction = import.meta.env.PROD;
 
 // If you are using ngrok locally, put the ngrok URL here. 
 // Otherwise, keep it empty '' to use the Vite proxy (127.0.0.1:5555).
-const LOCAL_API_URL = 'https://your-ngrok-id.ngrok-free.app'; 
+// const LOCAL_API_URL = 'https://your-ngrok-id.ngrok-free.app'; 
 
 const api = axios.create({
   baseURL: isProduction 
     ? 'https://vetty-siuq.onrender.com' // Render URL
-    : LOCAL_API_URL,                   // ngrok or empty for proxy
+    : '/',                   // ngrok or empty for proxy
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
