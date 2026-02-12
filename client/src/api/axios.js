@@ -40,7 +40,7 @@ const isProduction = import.meta.env.PROD;
 const api = axios.create({
   baseURL: isProduction 
     ? 'https://vetty-siuq.onrender.com' // Render URL
-    : '/',                   // ngrok or empty for proxy
+    : '/api',                   // ngrok or empty for proxy
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
