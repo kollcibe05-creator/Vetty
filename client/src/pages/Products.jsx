@@ -40,6 +40,10 @@ const Products = () => {
 
   const handleAddToCart = (product) => {
     dispatch(addToCart({ productId: product.id, quantity: 1 }));
+    dispatch(showNotification({
+            type: 'success',
+            message: `Woot! ${product.name} is now in your cart! 🐾`,
+          }));
   };
 
   return (

@@ -8,7 +8,7 @@ import axios from 'axios';
 const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const  {items} = useSelector(selectCart);
+  const  {items = []} = useSelector(selectCart);
   const  totalAmount  = useSelector(selectCartTotal);
   
   const [zones, setZones] = useState([]);

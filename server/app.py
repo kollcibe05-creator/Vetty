@@ -240,16 +240,15 @@ class CartResource(Resource):
 
 
 class CartItemResource(Resource):
-
     def post(self):
         user_id = session.get('user_id')
         if not user_id:
             return {"error": "Unauthorized"}, 401
 
         data = request.get_json()
-
         product_id = data.get("product_id")
         product = db.session.get(Product, product_id)
+        
         if not product:
             return {"error": "Product not found"}, 404
 
@@ -257,31 +256,30 @@ class CartItemResource(Resource):
         if quantity > product.stock_quantity:
             return {"error": "Insufficient stock"}, 400
 
-
         cart = Cart.query.filter_by(user_id=user_id).first()
         if not cart:
             cart = Cart(user_id=user_id)
             db.session.add(cart)
             db.session.commit()
 
-        existing_item = CartItem.query.filter_by(
+        cart_item = CartItem.query.filter_by(
             cart_id=cart.id,
             product_id=product_id
         ).first()
 
-        if existing_item:
-            existing_item.quantity += quantity
+        if cart_item:
+            cart_item.quantity += quantity
         else:
-            new_item = CartItem(
+            cart_item = CartItem(
                 cart_id=cart.id,
                 product_id=product_id,
                 quantity=quantity
             )
-            db.session.add(new_item)
+            db.session.add(cart_item)
 
         db.session.commit()
 
-        return new_item.to_dict(), 201
+        return cart_item.to_dict(), 201
 
     def delete(self, item_id):
         user_id = session.get('user_id')
@@ -707,7 +705,7 @@ class MpesaPayment(Resource):
                 "PartyA": phone,
                 "PartyB": business_shortcode,
                 "PhoneNumber": phone,
-                "CallBackURL": "http://127.0.0.1:5555/callback", 
+                "CallBackURL": "https://abcd-1234.ngrok.io/callback",   #needs change
                 "AccountReference": f"Order{order_id}" if order_id else "VettyPay",
                 "TransactionDesc": "Vetty Payment"
             }
