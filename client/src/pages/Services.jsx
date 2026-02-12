@@ -1,176 +1,267 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchServices, setFilters, searchServices } from '../features/serviceSlice';
-import { selectServices, selectServiceFilters, selectServiceLoading } from '../features/serviceSlice';
-import { showSpinner, hideSpinner, showNotification } from '../features/uiSlice';
+import { fetchServices, setFilters, selectServices, selectServiceLoading, createAppointment } from '../features/serviceSlice';
+import { showNotification } from '../features/uiSlice';
 import ItemCard from '../components/ItemCard';
+import CategoryFilter from '../components/CategoryFilter';
 
 const Services = () => {
+  const navigate = useNavigate()
   const dispatch = useDispatch();
-  const { items, loading, filters } = useSelector(selectServices);
+  const { items, filters } = useSelector(selectServices);
   const isLoading = useSelector(selectServiceLoading);
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedService, setSelectedService] = useState(null);
+  const [bookingDate, setBookingDate] = useState('');
+  const [notes, setNotes] = useState('');
 
-  // Fetch services on mount and when filters change
+  //added
+  const [zones, setZones] = useState([]);
+  const [selectedZoneId, setSelectedZoneId] = useState('');
   useEffect(() => {
-    dispatch(fetchServices(filters));
-  }, [dispatch, filters]);
+    if (selectedService) {
+      axios.get('https://thallous-nongraduated-doris.ngrok-free.dev/delivery-zones', {
+        headers: { 
+          'ngrok-skip-browser-warning': 'true',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(res => setZones(res.data))
+      .catch(err => console.error("Error fetching zones:", err));
+    }
+  }, [selectedService]);
 
-  // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (debouncedSearch.trim()) {
-        dispatch(searchServices(debouncedSearch));
-      }
-    }, 500);
-
+      dispatch(fetchServices(filters));      
+    }, 400);
     return () => clearTimeout(timer);
-  }, [debouncedSearch, dispatch]);
+  }, [dispatch, filters]);
+
+  const handleCategoryChange = (categoryName) => {
+    dispatch(setFilters({category: categoryName}));
+  };
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
-    setDebouncedSearch(value);
+    dispatch(setFilters({search: value}));
   };
 
-  const handleCategoryChange = (category) => {
-    dispatch(setFilters({ category }));
-  };
+<<<<<<< HEAD
+  const submitBooking = async () => {
+    if (!bookingDate) {
+      dispatch(showNotification({ type: 'error', message: 'Please select a date' }));
+      return;
+    }
+    const result = await dispatch(createAppointment({
+      service_id: selectedService.id,
+      appointment_date: bookingDate,
+      total_price: selectedService.base_price || selectedService.price,
+=======
+const submitBooking = async () => {
+    if (!bookingDate || !selectedZoneId) {
+      dispatch(showNotification({ type: 'error', message: 'Please select a date, time and location' }));
 
-  const handleSortChange = (sortBy) => {
-    dispatch(setFilters({ sortBy }));
-  };
+      return;
+    }
 
-  const handleBookNow = (service) => {
-    // This would typically navigate to a booking form or open a modal
-    dispatch(showNotification({
-      type: 'info',
-      title: 'Booking Feature',
-      message: 'Service booking functionality coming soon!',
+    const zone = zones.find(z => z.id === parseInt(selectedZoneId));
+    const finalPrice = (selectedService.base_price || 0) + (zone?.delivery_fee || 0);
+
+    const result = await dispatch(createAppointment({
+      service_id: selectedService.id,
+      appointment_date: bookingDate,
+      delivery_zone_id: selectedZoneId,
+      total_price:finalPrice,
+>>>>>>> origin/suleiman
+      notes
     }));
-  };
+    if (createAppointment.fulfilled.match(result)) {
+      const newAppointment = result.payload
+      setSelectedService(null);
+      setBookingDate('');
+      setNotes('');
 
-  const categories = [...new Set(items.map(item => item.category?.name).filter(Boolean))];
+      navigate('/mpesaForm', {
+        state: {
+          amount: finalPrice,
+          appointmentId: newAppointment.id
+        }
+      });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">Services</h1>
-            
-            {/* Search Bar */}
-            <div className="relative flex-1 max-w-md">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                placeholder="Search services..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 0V3m-8 0v4m0 8h8M9 21l3-3m0 0l-3 3m3-3v12m0-8l-3-3"></path>
-                </svg>
-              </div>
-            </div>
+    <div className="min-h-screen bg-[#FFFBF0]"> {/* Match Homepage Background */}
+      
+      {/* --- HERO HEADER --- */}
+      <section className="bg-yellow-400 py-16 px-4 rounded-b-[3rem] md:rounded-b-[5rem] shadow-sm mb-12 relative overflow-hidden">
+        {/* Decorative Blob */}
+        <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-400 rounded-full opacity-20 blur-2xl"></div>
+        
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h1 className="text-5xl md:text-6xl font-black text-[#2D1B69] mb-4">
+            Our Services
+          </h1>
+          <p className="text-[#2D1B69] opacity-80 text-lg font-medium max-w-xl mx-auto mb-8">
+            Because every pet deserves the best care. From grooming to vet care, we've got you covered.
+          </p>
+          
+          {/* Stylized Search Bar */}
+          <div className="relative max-w-lg mx-auto transform hover:scale-105 transition-transform duration-300">
+            <input 
+              type="text"
+              placeholder="What does your pet need today?"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full pl-14 pr-6 py-4 rounded-full border-2 border-transparent bg-white shadow-xl focus:border-orange-500 focus:ring-0 transition-all outline-none text-[#2D1B69] font-medium"
+            />
+            <svg className="absolute left-5 top-4.5 h-6 w-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Filters */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-wrap gap-4 items-center">
-            {/* Category Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Category:</span>
-              <select
-                value={filters.category || ''}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* --- FILTERS SECTION --- */}
+        <div className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-6 rounded-[2rem] shadow-sm border border-orange-50">
+          <div className="flex-1 w-full">
+            <CategoryFilter 
+              category_type="Service" 
+              onSelectedCategory={handleCategoryChange} 
+            />
+<<<<<<< HEAD
+          </div>
+          
+          <div className="flex items-center gap-3 bg-purple-50 px-4 py-2 rounded-full border border-purple-100">
+            <span className="text-sm font-bold text-purple-700">Sort:</span>
+            <select 
+              className="bg-transparent text-sm font-bold text-[#2D1B69] outline-none cursor-pointer"
+              onChange={(e) => dispatch(setFilters({ sortBy: e.target.value }))}
+              value={filters.sortBy}
+            >
+              <option value="name">Name (A-Z)</option>
+              <option value="base_price">Price (Low-High)</option>
+            </select>
+=======
+            <label className="block text-sm font-medium text-gray-700 mb-1">Service Location/Zone</label>
+              <select 
+                className="w-full border rounded-lg p-2 mb-4 focus:ring-2 focus:ring-blue-500 outline-none"
+                value={selectedZoneId}
+                onChange={(e) => setSelectedZoneId(e.target.value)}
+                required
               >
-                <option value="">All Categories</option>
-                {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
+                <option value="">Select Location...</option>
+                {zones.map(z => (
+                  <option key={z.id} value={z.id}>{z.zone_name} (+ Ksh {z.delivery_fee})</option>
                 ))}
               </select>
+
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notes for the provider</label>
+            <textarea 
+              className="w-full border rounded-lg p-2 mb-4"
+              placeholder="Any specific requests?"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+
+            <div className="flex gap-3">
+              <button 
+                onClick={submitBooking}
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+              >
+                Confirm Booking
+              </button>
+              <button 
+                onClick={() => setSelectedService(null)}
+                className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg font-semibold hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+            </div>
+>>>>>>> origin/suleiman
+          </div>
+        </div>
+
+        {/* --- SERVICES GRID --- */}
+        {!isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-20">
+            {items.map((service) => (
+              <div key={service.id} className="transform hover:-translate-y-2 transition-all duration-300">
+                <ItemCard
+                  item={service}
+                  type="service"
+                  onBookNow={() => {
+                    if (!isAuthenticated) {
+                      dispatch(showNotification({type: 'error', message: "Please login to book"}));
+                      return;
+                    }
+                    setSelectedService(service);
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex justify-center py-20">
+            <div className="animate-bounce text-4xl">🐾</div>
+          </div>
+        )}
+      </div>
+
+      {/* --- RE-STYLED BOOKING MODAL --- */}
+      {selectedService && (
+        <div className="fixed inset-0 bg-[#2D1B69]/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl border-4 border-yellow-400 transform scale-100 animate-in fade-in zoom-in duration-300">
+            <h2 className="text-3xl font-black text-[#2D1B69] mb-2 text-center">Book Now!</h2>
+            <p className="text-orange-600 text-center font-bold mb-6">{selectedService.name}</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-[#2D1B69] mb-1 ml-2">Preferred Date</label>
+                <input 
+                  type="datetime-local" 
+                  className="w-full border-2 border-purple-50 rounded-2xl p-3 focus:border-orange-500 outline-none transition"
+                  value={bookingDate}
+                  onChange={(e) => setBookingDate(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-[#2D1B69] mb-1 ml-2">Special Notes</label>
+                <textarea 
+                  className="w-full border-2 border-purple-50 rounded-2xl p-3 focus:border-orange-500 outline-none transition h-24"
+                  placeholder="Tell us about your pet's needs..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
             </div>
 
-            {/* Sort */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Sort by:</span>
-              <select
-                value={filters.sortBy || 'name'}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            <div className="flex flex-col gap-3 mt-8">
+              <button 
+                onClick={submitBooking}
+                className="w-full bg-[#2D1B69] text-white py-4 rounded-full font-black text-lg hover:bg-orange-600 transition shadow-lg active:scale-95"
               >
-                <option value="name">Name</option>
-                <option value="price">Price</option>
-                <option value="duration">Duration</option>
-              </select>
+                Confirm Appointment
+              </button>
+              <button 
+                onClick={() => setSelectedService(null)}
+                className="w-full bg-gray-100 text-[#2D1B69] py-3 rounded-full font-bold hover:bg-gray-200 transition"
+              >
+                Maybe Later
+              </button>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
       )}
-
-      {/* Services Grid */}
-      {!isLoading && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {items.length === 0 ? (
-            <div className="text-center py-12">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 0V3m-8 0v4m0 8h8M9 21l3-3m0 0l-3 3m3-3v12m0-8l-3-3"></path>
-              </svg>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">No services found</h3>
-              <p className="mt-2 text-gray-600">Try adjusting your search or filters</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
-              {items.map((service, index) => (
-                <div
-                  key={service.id}
-                  className="transform transition-all duration-500"
-                  style={{
-                    animationDelay: `${index * 100}ms`,
-                    animation: 'fade-in 0.5s ease-out forwards'
-                  }}
-                >
-                  <ItemCard
-                    item={service}
-                    type="service"
-                    onBookNow={handleBookNow}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Fade-in animation styles */}
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 };

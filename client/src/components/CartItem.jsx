@@ -1,12 +1,21 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { updateCartItem, removeFromCart } from '../features/cartSlice';
+import { showNotification } from '../features/uiSlice';
 
 const CartItem = ({ item }) => {
   const dispatch = useDispatch();
 
+  //edited
   const handleQuantityChange = (newQuantity) => {
     if (newQuantity < 1) return;
+    if (newQuantity > item.product.stock_quantity){
+      dispatch(showNotification({
+        type: 'error',
+        message: 'Cannot exceed available stock'
+      }))
+      return
+    }
     dispatch(updateCartItem({ cartItemId: item.id, quantity: newQuantity }));
   };
 
@@ -56,7 +65,7 @@ const CartItem = ({ item }) => {
           <button
             onClick={() => handleQuantityChange(item.quantity - 1)}
             className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors"
-            disabled={item.quantity <= 1}
+            disabled={item.quantity <= 1 || !item.quantity}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path>
@@ -70,7 +79,7 @@ const CartItem = ({ item }) => {
           <button
             onClick={() => handleQuantityChange(item.quantity + 1)}
             className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors"
-            disabled={item.quantity >= item.product.stock_quantity}
+            disabled={item.quantity >= (item.product?.stock_quantity || 0) || !item.product?.stock_quantity}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>

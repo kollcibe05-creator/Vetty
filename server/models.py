@@ -37,10 +37,13 @@ class Product(db.Model, SerializerMixin):
 
     # )
 
-
-
-
-    serialize_rules = ("-reviews.product", "-category.products", "-inventory_alert.product", "-cart_items.product", "-order_items.product", "-reviews", "-cart_items", "-order_items" )  #"-inventory_alert_obj", "-category_name", "threshold"
+    serialize_rules = (
+    "-category.products", 
+    "-inventory_alert", 
+    "-cart_items", 
+    "-order_items", 
+    "-reviews"
+)  #"-inventory_alert_obj", "-category_name", "threshold"
 
 
 class Service(db.Model, SerializerMixin):
@@ -310,6 +313,8 @@ class User(db.Model, SerializerMixin):
     _password_hash = db.Column(db.String(255), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
     vetting_status = db.Column(db.String(20), default='not_started')  # not_started, pending, approved, rejected
+    business_name = db.Column(db.String(200), nullable=True)
+    business_description = db.Column(db.Text, nullable=True)
 
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -368,12 +373,17 @@ class Appointment(db.Model, SerializerMixin):
     notes = db.Column(db.Text)
     total_price = db.Column(db.Integer)
 
+    #added
+    delivery_zone_id = db.Column(db.Integer, db.ForeignKey("delivery_zones.id"), nullable=True)
+
     user = db.relationship("User", back_populates="appointments")
     service = db.relationship("Service", back_populates="appointments")
     payments = db.relationship("Payment", back_populates="appointment", cascade="all, delete-orphan")
     
+    #added
+    delivery_zone = db.relationship('DeliveryZone')
 
-    serialize_rules = ("-user.appointments", "-service.appointments","-payments.appointment")
+    serialize_rules = ("-user.appointments", "-service.appointments","-payments.appointment", '-delivery_zone.appointments')
     @validates("status")
     def validate_status(self, key,value):
         if value not in ["Pending", "Approved", "Scheduled", "Completed", "Cancelled", "No-Show"]:
