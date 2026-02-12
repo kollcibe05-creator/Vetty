@@ -8,7 +8,7 @@ function CategoryFilter({ category_type, onSelectedCategory, activeCategory }) {
     useEffect(() => {
         api.get("/categories")
             .then(response => {
-                // Filter categories based on the type (Service vs Product)
+
                 const filtered = response.data.filter(cat => 
                     cat.category_type.toLowerCase() === category_type.toLowerCase()
                 );

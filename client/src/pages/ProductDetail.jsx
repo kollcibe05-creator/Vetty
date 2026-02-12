@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import { fetchReviews, selectReviews } from '../features/reviewSlice';
+import ReviewStars from '../components/ReviewStars';
+import ReviewSection from '../components/ReviewSection';
 import { 
   fetchProductById, 
   fetchProducts,
@@ -12,25 +15,52 @@ import { addToCart } from '../features/cartSlice';
 import { showNotification } from '../features/uiSlice';
 import ItemCard from '../components/ItemCard';
 
+
+
+
+
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  useEffect(() => {
+  dispatch(fetchReviews()); 
+}, [dispatch]);
   
+
+
   const product = useSelector(selectCurrentProduct);
   const isLoading = useSelector(selectProductLoading);
   const allProducts = useSelector(selectAllProducts) || [];
+
+const { items: reviews, loading, error } = useSelector(selectReviews);
+
+
+
+const productReviews = reviews.filter(r => r.product_id === product?.id);
+
+const avgRating = productReviews.length 
+    ? productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length
+    : 0;
+
+
+ 
   const [selectedQuantity, setSelectedQuantity] = useState(1);
+
 
   useEffect(() => {
     if (id) {
       dispatch(fetchProductById(id));
+ 
       if (allProducts.length === 0) {
         dispatch(fetchProducts({ background: true }));
       }
     }
   }, [dispatch, id, allProducts.length]);
 
+
+  
   useEffect(() => {
     setSelectedQuantity(1);
     window.scrollTo(0, 0);
@@ -53,7 +83,7 @@ const ProductDetail = () => {
     }
   };
 
-  // --- THEME LOADING VIEW ---
+  // Loading 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#FFFBF0] flex flex-col items-center justify-center">
@@ -63,7 +93,7 @@ const ProductDetail = () => {
     );
   }
 
-  // --- THEME NOT FOUND VIEW ---
+  // Not Found
   if (!product) {
     return (
       <div className="min-h-screen bg-[#FFFBF0] flex items-center justify-center p-4">
@@ -133,15 +163,22 @@ const ProductDetail = () => {
                 </span>
               </div>
 
-              <h1 className="text-4xl md:text-5xl font-black text-[#2D1B69] leading-[1.1] mb-4">
-                {product.name}
-              </h1>
-              
-              <div className="flex items-center gap-4 mb-8">
-                <p className="text-4xl font-black text-orange-600">
-                  Ksh. {product.price?.toLocaleString()}
-                </p>
-                <span className="text-gray-400 font-bold">/ unit</span>
+              <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight mb-2">{product.name}</h1>
+              <p className="text-3xl font-light text-blue-600 mb-8">
+                Ksh. {product.price?.toLocaleString()}
+              </p>
+
+                {/* Star Rating */}
+                {avgRating > 0 && (
+                  <div className="flex items-center mb-4 space-x-2">
+                    <ReviewStars rating={avgRating} size={5} />
+                    <span className="text-sm text-gray-500">({productReviews.length} reviews)</span>
+                  </div>
+                )}
+
+              <div className="prose prose-sm text-gray-600 mb-8 border-t border-b border-gray-50 py-6">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Description</h3>
+                <p>{product.description}</p>
               </div>
 
               <div className="space-y-4 mb-10">
@@ -197,6 +234,9 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
+        <section className="mt-16">
+          <ReviewSection productId={id} />
+        </section>
 
         {/* RELATED PRODUCTS */}
         {relatedProducts.length > 0 && (

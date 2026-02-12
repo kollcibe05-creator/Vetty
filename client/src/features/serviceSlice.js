@@ -6,26 +6,6 @@ import { hideSpinner, showNotification, showSpinner } from "./uiSlice"
 
 const API_URL = 'http://127.0.0.1:5555';
 
-// // Async thunks for service operations
-// export const fetchServices = createAsyncThunk(
-//   'services/fetchServices',
-//   async (params = {}, { dispatch, rejectWithValue }) => {
-//     try {
-//       dispatch(showSpinner({message: "Loading services..."}));
-//       const res = await axios.get(`${API_URL}/services`, { params });
-//       dispatch(hideSpinner());
-//       return res.data;
-//     } catch (err) {
-//       dispatch(hideSpinner());
-//       dispatch(showNotification({
-//         type: 'error',
-//         title: 'Fetch Error',
-//         message: 'Failed to fetch services'
-//       }));
-//       return rejectWithValue(err.response?.data?.error || 'Failed to fetch services');
-//     }
-//   }
-// );
 
 export const fetchServices = createAsyncThunk(
   'services/fetchServices',
@@ -33,10 +13,9 @@ export const fetchServices = createAsyncThunk(
     try {
       dispatch(showSpinner({ message: "Loading services..." }));
 
-      // Create a clean params object
+
       const params = {};
-      
-      // Only add parameters if they have a value
+
       if (filters.category && filters.category !== "") {
         params.category = filters.category;
       }
@@ -44,7 +23,7 @@ export const fetchServices = createAsyncThunk(
         params.search = filters.search;
       }
       
-      // Map frontend 'sortBy' to backend 'sort_by' (common Flask naming convention)
+
       if (filters.sortBy) {
         params.sort_by = filters.sortBy;
       }
@@ -376,7 +355,7 @@ const serviceSlice = createSlice({
       })
       .addCase(createAppointment.fulfilled, (state, action) => {
             state.loading = false
-            state.appointments.push(action.payload)
+            state.userAppointments.unshift(action.payload)
       })
       .addCase(createAppointment.rejected, (state, action) => {
             state.loading = false

@@ -5,15 +5,22 @@ import { showSpinner, hideSpinner, showNotification } from '../features/uiSlice'
 import ItemCard from '../components/ItemCard';
 import { addToCart } from '../features/cartSlice';
 import CategoryFilter from '../components/CategoryFilter';
+import { fetchReviews, selectReviews } from '../features/reviewSlice' //, setFilters
+
 
 const Products = () => {
   const dispatch = useDispatch();
   const { items, filters } = useSelector(selectProducts);
   const isLoading = useSelector(selectProductLoading);
+  const {items: reviews} = useSelector(selectReviews)
+
+  useEffect(() => {
+    dispatch(fetchReviews()); 
+  }, [dispatch]);
 
   const [searchQuery, setSearchQuery] = useState('');
 
-// 1. Fetch products when filters change
+
   useEffect(() => {
     const timer = setTimeout(() => {
         dispatch(fetchProducts(filters));
@@ -27,7 +34,6 @@ const Products = () => {
     dispatch(setFilters({ search: value }));
   };
 
-// 2. Updated handler to match the reusable CategoryFilter prop
   const handleCategoryChange = (categoryName) => {
     dispatch(setFilters({ category: categoryName }));
   };
