@@ -14,7 +14,7 @@ import ProductDetail from '../pages/ProductDetail';
 import ServiceDetail from '../pages/ServiceDetail';
 import MpesaForm from '../pages/MpesaForm';
 import Profile from '../pages/Profile';
-import UserDashboard from '../pages/UserDashboard';
+import UserDashboard from '../pages/userDashboard';
 import AccountDetails from '../pages/AccountDetails';
 import ServiceStats from '../pages/ServiceStats'; 
 import ProductStats from '../pages/ProductStats';

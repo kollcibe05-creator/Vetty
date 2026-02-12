@@ -27,13 +27,13 @@ const Footer = () => {
             </p>
             {/* Social Links */}
             <div className="flex space-x-4 pt-2">
-              <a href="#" className="w-10 h-10 bg-purple-800 rounded-full flex items-center justify-center hover:bg-orange-500 transition-all shadow-lg">
+              <a href="#" className="w-10 h-10 bg-purple-800 rounded-full flex items-center justify-center hover:bg-[#F97316] transition-all shadow-lg">
                 <FaInstagram size={18} />
               </a>
-              <a href="#" className="w-10 h-10 bg-purple-800 rounded-full flex items-center justify-center hover:bg-orange-500 transition-all shadow-lg">
+              <a href="#" className="w-10 h-10 bg-purple-800 rounded-full flex items-center justify-center hover:bg-[#F97316] transition-all shadow-lg">
                 <FaTwitter size={18} />
               </a>
-              <a href="#" className="w-10 h-10 bg-purple-800 rounded-full flex items-center justify-center hover:bg-orange-500 transition-all shadow-lg">
+              <a href="#" className="w-10 h-10 bg-purple-800 rounded-full flex items-center justify-center hover:bg-[#F97316] transition-all shadow-lg">
                 <FaFacebookF size={18} />
               </a>
               <a href="#" className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center hover:bg-green-500 transition-all shadow-lg">

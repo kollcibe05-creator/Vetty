@@ -97,7 +97,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#2D1B69] text-white py-4 px-6 rounded-full font-black text-sm uppercase tracking-widest hover:bg-orange-500 shadow-lg shadow-purple-100 transition-all transform hover:-translate-y-1 disabled:opacity-50"
+              className="w-full bg-[#2D1B69] text-white py-4 px-6 rounded-full font-black text-sm uppercase tracking-widest hover:bg-[#F97316] shadow-lg shadow-purple-100 transition-all transform hover:-translate-y-1 disabled:opacity-50"
             >
               {loading ? "Verifying..." : "Login to Vetty"}
             </button>

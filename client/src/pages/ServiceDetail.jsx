@@ -12,7 +12,6 @@ const ServiceDetail = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-<<<<<<< HEAD
   const { items } = useSelector(selectServices);
   const service = useSelector(selectCurrentService);
   const isLoading = useSelector(selectServiceLoading);
@@ -21,18 +20,6 @@ const ServiceDetail = () => {
   const [isBooking, setIsBooking] = useState(false);
   const [bookingDate, setBookingDate] = useState('');
   const [notes, setNotes] = useState('');
-=======
-const {items} = useSelector(selectServices)
-const service = useSelector(selectCurrentService);
-const isLoading = useSelector(selectServiceLoading);
-const {isAuthenticated} = useSelector((state) => state.auth)
-
-const [isBooking, setIsBooking] = useState(false)
-  
-const [bookingDate, setBookingDate] = useState('');
-const [notes, setNotes] = useState('');
-  
->>>>>>> origin/suleiman
 
   //added
   const [zones, setZones] = useState([]);
@@ -71,25 +58,6 @@ const [notes, setNotes] = useState('');
     setIsBooking(true);
   };
 
-  const submitBooking = async () => {
-    if (!bookingDate) {
-      dispatch(showNotification({ type: 'error', message: 'Please select a date and time' }));
-      return;
-    }
-    const result = await dispatch(createAppointment({
-      service_id: service.id,
-      appointment_date: bookingDate,
-      total_price: service.base_price || 0,
-      notes
-    }));
-    if (createAppointment.fulfilled.match(result)) {
-      setIsBooking(false);
-      setBookingDate('');
-      setNotes('');
-      dispatch(showNotification({ type: 'success', message: 'Booking successful! We can’t wait to see your pet!' }));
-    }
-  };
-
   // --- THEME LOADING STATE ---
   if (isLoading) {
     return (
@@ -117,8 +85,6 @@ const [notes, setNotes] = useState('');
     );
   }
 
-<<<<<<< HEAD
-=======
   const submitBooking = async () => {
     if (!bookingDate || !selectedZoneId) {
       dispatch(showNotification({type: 'error', message: 'Please select a date, time and location'}) )
@@ -145,8 +111,6 @@ const [notes, setNotes] = useState('');
     }
   }
 
-
->>>>>>> origin/suleiman
   const relatedServices = items
     .filter(item => item.category?.name === service.category?.name && item.id !== service?.id)
     .slice(0, 4);
@@ -218,10 +182,6 @@ const [notes, setNotes] = useState('');
               >
                 Book a Session 🐾
               </button>
-<<<<<<< HEAD
-=======
-              
->>>>>>> origin/suleiman
             </div>
           </div>
         </div>
@@ -255,26 +215,16 @@ const [notes, setNotes] = useState('');
               <p className="text-orange-600 font-bold uppercase tracking-widest text-xs">{service.name}</p>
             </div>
             
-<<<<<<< HEAD
-            <div className="space-y-6">
+<div className="space-y-6">
               <div>
-                <label className="block text-[10px] font-black text-[#2D1B69] uppercase tracking-[0.2em] mb-2 ml-2">Pick a Date & Time</label>
+                <label className="block text-sm font-medium mb-1">Select Date & Time</label>
                 <input 
                   type="datetime-local" 
-                  className="w-full border-2 border-orange-50 rounded-2xl p-4 bg-[#FFFBF0] text-[#2D1B69] font-bold focus:border-orange-500 outline-none transition-all"
+                  className="w-full border rounded-lg p-2 mb-4"
                   value={bookingDate}
                   onChange={(e) => setBookingDate(e.target.value)}
                 />
-              </div>
-=======
-            <label className="block text-sm font-medium mb-1">Select Date & Time</label>
-            <input 
-              type="datetime-local" 
-              className="w-full border rounded-lg p-2 mb-4"
-              value={bookingDate}
-              onChange={(e) => setBookingDate(e.target.value)}
-            />
-            <label className="block text-sm font-medium mb-1">Service Location/Zone</label>
+                <label className="block text-sm font-medium mb-1">Service Location/Zone</label>
                 <select 
                   className="w-full border rounded-lg p-2 mb-4"
                   value={selectedZoneId}
@@ -286,7 +236,7 @@ const [notes, setNotes] = useState('');
                     <option key={z.id} value={z.id}>{z.zone_name} (+ Ksh {z.delivery_fee})</option>
                   ))}
                 </select>
->>>>>>> origin/suleiman
+              </div>
 
               <div>
                 <label className="block text-[10px] font-black text-[#2D1B69] uppercase tracking-[0.2em] mb-2 ml-2">Notes (Allergies, Temperament...)</label>

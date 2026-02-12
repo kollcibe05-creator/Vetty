@@ -65,8 +65,8 @@ const Signup = () => {
               onClick={() => setIsSeller(true)}
               className={`flex-1 py-3 px-6 rounded-full font-black text-xs uppercase tracking-widest transition-all ${
                 isSeller 
-                  ? 'bg-orange-500 text-white shadow-lg' 
-                  : 'text-gray-400 hover:text-orange-600'
+                  ? 'bg-[#F97316] text-white shadow-lg' 
+                  : 'text-gray-400 hover:text-[#2D1B69]'
               }`}
             >
               🏪 Provider
@@ -134,7 +134,7 @@ const Signup = () => {
               disabled={loading}
               className={`w-full py-5 rounded-full font-black text-sm uppercase tracking-widest shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 disabled:opacity-50 mt-4 ${
                 isSeller 
-                  ? 'bg-orange-500 text-white shadow-orange-100 hover:bg-orange-600' 
+                  ? 'bg-[#F97316] text-white shadow-orange-100 hover:bg-orange-600' 
                   : 'bg-[#2D1B69] text-white shadow-purple-100 hover:bg-purple-900'
               }`}
             >

@@ -53,21 +53,9 @@ const Services = () => {
     dispatch(setFilters({search: value}));
   };
 
-<<<<<<< HEAD
   const submitBooking = async () => {
-    if (!bookingDate) {
-      dispatch(showNotification({ type: 'error', message: 'Please select a date' }));
-      return;
-    }
-    const result = await dispatch(createAppointment({
-      service_id: selectedService.id,
-      appointment_date: bookingDate,
-      total_price: selectedService.base_price || selectedService.price,
-=======
-const submitBooking = async () => {
     if (!bookingDate || !selectedZoneId) {
       dispatch(showNotification({ type: 'error', message: 'Please select a date, time and location' }));
-
       return;
     }
 
@@ -78,8 +66,7 @@ const submitBooking = async () => {
       service_id: selectedService.id,
       appointment_date: bookingDate,
       delivery_zone_id: selectedZoneId,
-      total_price:finalPrice,
->>>>>>> origin/suleiman
+      total_price: finalPrice,
       notes
     }));
     if (createAppointment.fulfilled.match(result)) {
@@ -137,7 +124,6 @@ const submitBooking = async () => {
               category_type="Service" 
               onSelectedCategory={handleCategoryChange} 
             />
-<<<<<<< HEAD
           </div>
           
           <div className="flex items-center gap-3 bg-purple-50 px-4 py-2 rounded-full border border-purple-100">
@@ -150,19 +136,58 @@ const submitBooking = async () => {
               <option value="name">Name (A-Z)</option>
               <option value="base_price">Price (Low-High)</option>
             </select>
-=======
+          </div>
+        </div>
+
+        {/* --- SERVICES GRID --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          {isLoading ? (
+            <div className="col-span-full flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-gray-500">
+              No services found matching your criteria.
+            </div>
+          ) : (
+            items.map((service) => (
+              <ItemCard
+                key={service.id}
+                item={service}
+                type="service"
+                onBookNow={() => setSelectedService(service)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* --- BOOKING MODAL --- */}
+      {selectedService && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[2rem] p-8 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">Book {selectedService.name}</h3>
+            
+            <label className="block text-sm font-medium text-gray-700 mb-1">Select Date & Time</label>
+            <input 
+              type="datetime-local" 
+              className="w-full border rounded-lg p-2 mb-4"
+              value={bookingDate}
+              onChange={(e) => setBookingDate(e.target.value)}
+            />
+            
             <label className="block text-sm font-medium text-gray-700 mb-1">Service Location/Zone</label>
-              <select 
-                className="w-full border rounded-lg p-2 mb-4 focus:ring-2 focus:ring-blue-500 outline-none"
-                value={selectedZoneId}
-                onChange={(e) => setSelectedZoneId(e.target.value)}
-                required
-              >
-                <option value="">Select Location...</option>
-                {zones.map(z => (
-                  <option key={z.id} value={z.id}>{z.zone_name} (+ Ksh {z.delivery_fee})</option>
-                ))}
-              </select>
+            <select 
+              className="w-full border rounded-lg p-2 mb-4"
+              value={selectedZoneId}
+              onChange={(e) => setSelectedZoneId(e.target.value)}
+              required
+            >
+              <option value="">Select Location...</option>
+              {zones.map(z => (
+                <option key={z.id} value={z.id}>{z.zone_name} (+ Ksh {z.delivery_fee})</option>
+              ))}
+            </select>
 
             <label className="block text-sm font-medium text-gray-700 mb-1">Notes for the provider</label>
             <textarea 
@@ -175,7 +200,7 @@ const submitBooking = async () => {
             <div className="flex gap-3">
               <button 
                 onClick={submitBooking}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+                className="flex-1 bg-[#2D1B69] text-white py-2 rounded-lg font-semibold hover:bg-purple-700"
               >
                 Confirm Booking
               </button>
@@ -184,79 +209,6 @@ const submitBooking = async () => {
                 className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg font-semibold hover:bg-gray-300"
               >
                 Cancel
-              </button>
-            </div>
->>>>>>> origin/suleiman
-          </div>
-        </div>
-
-        {/* --- SERVICES GRID --- */}
-        {!isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-20">
-            {items.map((service) => (
-              <div key={service.id} className="transform hover:-translate-y-2 transition-all duration-300">
-                <ItemCard
-                  item={service}
-                  type="service"
-                  onBookNow={() => {
-                    if (!isAuthenticated) {
-                      dispatch(showNotification({type: 'error', message: "Please login to book"}));
-                      return;
-                    }
-                    setSelectedService(service);
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex justify-center py-20">
-            <div className="animate-bounce text-4xl">🐾</div>
-          </div>
-        )}
-      </div>
-
-      {/* --- RE-STYLED BOOKING MODAL --- */}
-      {selectedService && (
-        <div className="fixed inset-0 bg-[#2D1B69]/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl border-4 border-yellow-400 transform scale-100 animate-in fade-in zoom-in duration-300">
-            <h2 className="text-3xl font-black text-[#2D1B69] mb-2 text-center">Book Now!</h2>
-            <p className="text-orange-600 text-center font-bold mb-6">{selectedService.name}</p>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-[#2D1B69] mb-1 ml-2">Preferred Date</label>
-                <input 
-                  type="datetime-local" 
-                  className="w-full border-2 border-purple-50 rounded-2xl p-3 focus:border-orange-500 outline-none transition"
-                  value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-[#2D1B69] mb-1 ml-2">Special Notes</label>
-                <textarea 
-                  className="w-full border-2 border-purple-50 rounded-2xl p-3 focus:border-orange-500 outline-none transition h-24"
-                  placeholder="Tell us about your pet's needs..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3 mt-8">
-              <button 
-                onClick={submitBooking}
-                className="w-full bg-[#2D1B69] text-white py-4 rounded-full font-black text-lg hover:bg-orange-600 transition shadow-lg active:scale-95"
-              >
-                Confirm Appointment
-              </button>
-              <button 
-                onClick={() => setSelectedService(null)}
-                className="w-full bg-gray-100 text-[#2D1B69] py-3 rounded-full font-bold hover:bg-gray-200 transition"
-              >
-                Maybe Later
               </button>
             </div>
           </div>
