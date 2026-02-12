@@ -9,28 +9,22 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 
-# =========================
-# LOAD ENV VARIABLES
-# =========================
+
 load_dotenv()
 
-# =========================
-# APP CONFIG
-# =========================
+
 app = Flask(__name__)
 
-#To be implemented later
 # app.secret_key = os.getenv('SECRET_KEY')
-app.secret_key = b'\xc9u/\xf0\xa8\xb6\xa5\xee\xe6G\xb7e\xb8,\xa98'
+app.secret_key = os.getenv('SECRET_KEY')
+# app.secret_key = b'\xf2\x9e\xa7\xea+b]\xe04\xfd\xcd?a_\xf4:'
 
 
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///app.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
-# =========================
-# DATABASE SETUP
-# =========================
+
 metadata = MetaData(
     naming_convention={
         "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
@@ -39,18 +33,23 @@ metadata = MetaData(
 
 db = SQLAlchemy(metadata=metadata)
 
-# =========================
-# EXTENSIONS
-# =========================
 migrate = Migrate(app, db)
 db.init_app(app)
 
 bcrypt = Bcrypt(app)
 
 api = Api(app)
-# CORS(app, 
-#      origins=['http://localhost:5176', 'http://localhost:5173'],
-#      supports_credentials=True,
-#      methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
-# )
-CORS(app, supports_credentials=True, origins=["http://localhost:5173", "http://127.0.0.1:5173" ])
+
+CORS(app, supports_credentials=True, origins=[
+    "http://localhost:5173", 
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
+])
+
+app.config.update(
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=False  #False ~ for local development
+)

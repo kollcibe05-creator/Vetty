@@ -1,91 +1,78 @@
-
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
+import { createSlice, createAsyncThunk, isAnyOf } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { showSpinner, hideSpinner, showNotification } from './uiSlice';
 
-const API_URL = 'http://localhost:5555'; 
+const API_URL = 'http://127.0.0.1:5555';
+const config = { withCredentials: true };
 
-export const signup = createAsyncThunk(
-  'auth/signup',
-  async (userData, {dispatch,  rejectWithValue }) => {
-    try {
-      dispatch(showSpinner({message: "Signing you up..."}))
-      await axios.post(`${API_URL}/signup`, userData);
-      dispatch(hideSpinner())
-      dispatch(showNotification({
-        type: "success",
-        title: "successful sign up",
-        message: "welcome to the pack!"
-      }))
-      return { success: true };
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.msg || 'Signup failed');
-    }
+
+export const login = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
+  try {
+    const res = await axios.post(`${API_URL}/login`, credentials, config);
+    return res.data;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.error || 'Login failed');
   }
-);
+});
 
-export const login = createAsyncThunk(
-  'auth/login',
-  async (credentials, { dispatch, rejectWithValue }) => {
+export const signup = createAsyncThunk('auth/signup', async (userData, { rejectWithValue }) => {
+  try {
+    const res = await axios.post(`${API_URL}/signup`, userData, config);
+    return res.data;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.error || 'Signup failed');
+  }
+});
+
+export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
+  try {
+    await axios.delete(`${API_URL}/logout`, config);
+    return null;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.error || 'Logout failed');
+  }
+});
+
+export const checkSession = createAsyncThunk('auth/checkSession', async (_, { rejectWithValue }) => {
+  try {
+    const res = await axios.get(`${API_URL}/check_session`, config);
+    return res.data;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.error || 'No session');
+  }
+});
+
+export const getProfile = createAsyncThunk(
+  "auth/getProfile",
+  async (_, thunkAPI) => {
     try {
-      dispatch(showSpinner({message: "Logging you in..."}))
-      const res = await axios.post(`${API_URL}/login`, credentials, {
-        withCredentials: true // Important for session cookies
+      const res = await fetch("http://127.0.0.1:5555/profile", {
+        credentials: 'include',
       });
-      dispatch(hideSpinner())
-      dispatch(showNotification({
-          type: "success",
-          title: "Welcome",
-          message: "Enjoy our products and services!"
-      }))
-      return res.data;
+      if (!res.ok) throw new Error("Failed to fetch profile");
+      return await res.json();
     } catch (err) {
-      dispatch(hideSpinner());
-        const errorMessage = err.response?.data?.error || 'Login failed';
-
-      dispatch(showNotification({
-          type: 'error',
-          title: 'Login Error',
-          message: errorMessage
-        }));
-      return rejectWithValue(err.response?.data?.error || 'Login failed');
+      return thunkAPI.rejectWithValue(err.message);
     }
   }
 );
 
-export const logout = createAsyncThunk(
-  'auth/logout',
-  async (_, { dispatch, rejectWithValue }) => {
-    try {
-      await axios.delete(`${API_URL}/logout`, {
-        withCredentials: true // Important for session cookies
-      });
-      dispatch(showNotification({
-        type: "success",
-        title: "Logged out",
-        message: "You have been logged out successfully"
-      }));
-      return { success: true };
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.error || 'Logout failed');
-    }
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (data, thunkAPI) => {
+    const res = await fetch("http://127.0.0.1:5555/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: 'include',      
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Failed to update profile");
+    return res.json();
   }
+  
 );
 
-export const fetchProfile = createAsyncThunk(
-  'auth/fetchProfile',
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await axios.get(`${API_URL}/check_session`, {
-        withCredentials: true // Important for session cookies
-      });
-      return res.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.error || 'Session expired');
-    }
-  }
-);
+
+// --- Slice ---
 
 const authSlice = createSlice({
   name: 'auth',
@@ -93,6 +80,7 @@ const authSlice = createSlice({
     user: null,
     isAuthenticated: false,
     loading: false,
+    initialized: false, 
     error: null,
   },
   reducers: {
@@ -103,50 +91,72 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    
-    builder.addCase(login.pending, (state) => {
-      state.loading = true;
+    builder
 
+       .addCase(getProfile.pending, (state) => {
+      state.loading = true;
       state.error = null;
-    });
-    builder.addCase(login.fulfilled, (state, action) => {
-      state.loading = false;
+    })
+    .addCase(getProfile.fulfilled, (state, action) => {
       state.user = action.payload;
-      state.isAuthenticated = true;
-    });
-    builder.addCase(login.rejected, (state, action) => {
+      state.loading = false;
+    })
+    .addCase(getProfile.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload;
-    });
+    })
 
-    
-    builder.addCase(fetchProfile.pending, (state) => {
-      state.loading = true;
-    });
-    builder.addCase(fetchProfile.fulfilled, (state, action) => {
-      state.loading = false;
-      state.user = action.payload;
-      state.isAuthenticated = true;
-    });
-    builder.addCase(fetchProfile.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload;
-      state.isAuthenticated = false;
-    });
 
-    builder.addCase(logout.pending, (state) => {
+    .addCase(updateProfile.pending, (state) => {
       state.loading = true;
-    });
-    builder.addCase(logout.fulfilled, (state) => {
-      state.loading = false;
-      state.user = null;
-      state.isAuthenticated = false;
       state.error = null;
-    });
-    builder.addCase(logout.rejected, (state, action) => {
+    })
+    .addCase(updateProfile.fulfilled, (state, action) => {
+      state.user = action.payload;
+      state.loading = false;
+    })
+    .addCase(updateProfile.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload;
-    });
+    })
+      .addMatcher(
+        isAnyOf(login.fulfilled, signup.fulfilled, checkSession.fulfilled),
+        (state, action) => {
+          state.user = action.payload;
+          state.isAuthenticated = true;
+          state.loading = false;
+          state.initialized = true;
+          state.error = null;
+        }
+      )
+
+      .addMatcher(
+        isAnyOf(logout.fulfilled, checkSession.rejected),
+        (state) => {
+          state.user = null;
+          state.isAuthenticated = false;
+          state.loading = false;
+          state.initialized = true;
+        }
+      )
+
+      .addMatcher(
+        isAnyOf(login.pending, signup.pending, checkSession.pending, logout.pending),
+        (state) => {
+          state.loading = true;
+          state.error = null;
+        }
+      )
+
+      .addMatcher(
+        isAnyOf(login.rejected, signup.rejected),
+        (state, action) => {
+          state.loading = false;
+          state.error = action.payload;
+        }
+      )
+     
+
   },
 });
 

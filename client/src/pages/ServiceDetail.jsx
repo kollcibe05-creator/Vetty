@@ -1,31 +1,84 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchServiceById } from '../features/serviceSlice';
-import { selectCurrentService, selectServiceLoading } from '../features/serviceSlice';
+import { fetchServiceById, fetchServices, createAppointment } from '../features/serviceSlice';
+import { selectCurrentService, selectServiceLoading, selectServices } from '../features/serviceSlice';
 import { showNotification } from '../features/uiSlice';
 import ItemCard from '../components/ItemCard';
+import { fetchReviews, selectReviews } from '../features/reviewSlice';
+import ReviewStars from '../components/ReviewStars'
+import ReviewSection from '../components/ReviewSection';
 
 const ServiceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+
   
-  const service = useSelector(selectCurrentService);
-  const isLoading = useSelector(selectServiceLoading);
+
+
+  
+const {items} = useSelector(selectServices)
+const service = useSelector(selectCurrentService);
+const isLoading = useSelector(selectServiceLoading);
+const {isAuthenticated} = useSelector((state) => state.auth)
+
+const [isBooking, setIsBooking] = useState(false)
+  
+const [bookingDate, setBookingDate] = useState('');
+const [notes, setNotes] = useState('');
+  
+
+  //added
+  const [zones, setZones] = useState([]);
+  const [exactLocation, setExactLocation] = useState('');
+
+  const [selectedZoneId, setSelectedZoneId] = useState('');
+
+    const { items: reviews } = useSelector(selectReviews);
+
+  useEffect(() => {
+  dispatch(fetchReviews()); 
+}, [dispatch]);
+  const serviceReviews = reviews.filter(r => r.service_id === service?.id);
+const avgRating = serviceReviews.length
+    ? serviceReviews.reduce((sum, r) => sum + r.rating, 0) / serviceReviews.length
+    : 0;
+
+
+  useEffect(() => {
+    if (isBooking) {
+      axios.get('http://127.0.0.1:5555/delivery-zones', {
+        headers: { 
+          'ngrok-skip-browser-warning': 'true',
+          'Accept': 'application/json',
+          "Content-Type": 'application/json'
+        }
+      })
+      .then(res => setZones(res.data));
+    }
+  }, [isBooking]);
+
+
+ 
 
   useEffect(() => {
     if (id) {
       dispatch(fetchServiceById(id));
+      if(items.length === 0){
+        dispatch(fetchServices())
+      }
     }
-  }, [dispatch, id]);
+  }, [dispatch, id, items.length]);
 
   const handleBookNow = () => {
-    dispatch(showNotification({
-      type: 'info',
-      title: 'Booking Feature',
-      message: 'Service booking functionality coming soon!',
-    }));
+    if (!isAuthenticated) {
+      dispatch(showNotification({type: 'error', message: 'Please login to book'}))
+      return 
+    }
+    setIsBooking(true)
   };
 
   if (isLoading) {
@@ -52,12 +105,40 @@ const ServiceDetail = () => {
     );
   }
 
-  // Mock related services
-  const relatedServices = [
-    { id: 2, name: 'Pet Walking', price: 25.00, category: { name: 'Exercise' } },
-    { id: 3, name: 'Pet Training', price: 45.00, category: { name: 'Training' } },
-    { id: 4, name: 'Grooming Service', price: 35.00, category: { name: 'Grooming' } },
-  ];
+  const submitBooking = async () => {
+    if (!bookingDate || !selectedZoneId ||!exactLocation.trim()) {
+      dispatch(showNotification({type: 'error', message: 'Please select a date, time, location and exact address'}) )
+      return
+    }
+    const zone = zones.find(z => z.id === parseInt(selectedZoneId));
+    const finalPrice = (service.base_price || 0) + (zone?.delivery_fee || 0);
+
+    const result = await dispatch(createAppointment({
+        service_id: service.id,
+        appointment_date: bookingDate,
+        delivery_zone_id: selectedZoneId,
+        exact_location: exactLocation,
+        total_price: finalPrice,
+        notes
+    }));
+    if (createAppointment.fulfilled.match(result)) {
+      setIsBooking(false)
+      setBookingDate('')
+      setNotes('')
+      setExactLocation('')
+      navigate('/mpesaForm', {state: {
+        amount: finalPrice,
+        appointmentId: result.payload.id
+      }})
+    }
+  }
+
+
+  const relatedServices = items
+    .filter(item => item.category?.name == service.category?.name && item.id !== service?.id)
+    // .slice(0, 4);
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -101,10 +182,17 @@ const ServiceDetail = () => {
               <div className="flex items-start justify-between mb-4">
                 <h1 className="text-3xl font-bold text-gray-900 flex-1">{service.name}</h1>
                 <div className="text-right">
-                  <span className="text-3xl font-bold text-blue-600">${service.price?.toFixed(2)}</span>
+                  <span className="text-3xl font-bold text-blue-600">Ksh. {service.base_price?.toFixed(2)}</span>
                   <span className="text-sm text-gray-500 ml-1">/session</span>
                 </div>
               </div>
+              {/* Star Rating */}
+              {avgRating > 0 && (
+                <div className="flex items-center mb-4 space-x-2">
+                  <ReviewStars rating={avgRating} size={5} />
+                  <span className="text-sm text-gray-500">({serviceReviews.length} reviews)</span>
+                </div>
+              )}
 
               {/* Category */}
               {service.category && (
@@ -127,12 +215,16 @@ const ServiceDetail = () => {
               <button
                 onClick={handleBookNow}
                 className="w-full py-3 px-6 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-200 transform active:scale-95"
-              >
+                >
                 Book Now
               </button>
+              
             </div>
           </div>
         </div>
+        <section className="mt-16">
+          <ReviewSection serviceId={id} />
+        </section>
 
         {/* Related Services */}
         <div className="mt-12">
@@ -146,6 +238,56 @@ const ServiceDetail = () => {
               />
             ))}
           </div>
+          {isBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <h2 className="text-xl font-bold mb-4">Book {service.name}</h2>
+            
+            <label className="block text-sm font-medium mb-1">Select Date & Time</label>
+            <input 
+              type="datetime-local" 
+              className="w-full border rounded-lg p-2 mb-4"
+              value={bookingDate}
+              onChange={(e) => setBookingDate(e.target.value)}
+            />
+            <label className="block text-sm font-medium mb-1">Service Location/Zone</label>
+                <select 
+                  className="w-full border rounded-lg p-2 mb-4"
+                  value={selectedZoneId}
+                  onChange={(e) => setSelectedZoneId(e.target.value)}
+                  required
+                >
+                  <option value="">Select Location...</option>
+                  {zones.map(z => (
+                    <option key={z.id} value={z.id}>{z.zone_name} (+ Ksh {z.delivery_fee})</option>
+                  ))}
+                </select>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Exact Address / Apartment
+            </label>
+            <input
+              type="text"
+              className="w-full border rounded-lg p-2 mb-4"
+              placeholder="e.g. Manchester Apartment 3B"
+              value={exactLocation}
+              onChange={(e) => setExactLocation(e.target.value)}
+            />
+
+
+            <label className="block text-sm font-medium mb-1">Notes</label>
+            <textarea 
+              className="w-full border rounded-lg p-2 mb-4"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+
+            <div className="flex gap-3">
+              <button onClick={submitBooking} className="flex-1 bg-blue-600 text-white py-2 rounded-lg">Confirm</button>
+              <button onClick={() => setIsBooking(false)} className="flex-1 bg-gray-200 py-2 rounded-lg">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
         </div>
       </div>
     </div>

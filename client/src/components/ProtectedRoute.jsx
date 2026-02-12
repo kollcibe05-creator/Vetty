@@ -1,21 +1,27 @@
-
 import { Navigate, Outlet } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
 const ProtectedRoute = ({ allowedRoles = [] }) => {
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const { isAuthenticated, user, initialized } = useSelector((state) => state.auth);
 
-  
+  if (!initialized) {
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-500">
+        Authenticating...
+      </div>
+    );
+  }
+
+ 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-
   
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role?.name)) {
-    return <Navigate to="/profile" replace />;
+  const userRole = user?.role?.name || user?.role; 
+  if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
+    return <Navigate to="/home" replace />;
   }
 
-  
   return <Outlet />;
 };
 

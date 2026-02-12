@@ -4,29 +4,42 @@ import axios from 'axios';
 import { hideSpinner, showNotification, showSpinner } from "./uiSlice"
 
 
-const API_URL = 'http://localhost:5555';
+const API_URL = 'http://127.0.0.1:5555';
 
-// Async thunks for service operations
+
 export const fetchServices = createAsyncThunk(
   'services/fetchServices',
-  async (params = {}, { dispatch, rejectWithValue }) => {
+  async (filters = {}, { dispatch, rejectWithValue }) => {
     try {
-      dispatch(showSpinner({message: "Loading services..."}));
+      dispatch(showSpinner({ message: "Loading services..." }));
+
+
+      const params = {};
+
+      if (filters.category && filters.category !== "") {
+        params.category = filters.category;
+      }
+      if (filters.search && filters.search !== "") {
+        params.search = filters.search;
+      }
+      
+
+      if (filters.sortBy) {
+        params.sort_by = filters.sortBy;
+      }
+      if (filters.sortOrder) {
+        params.sort_order = filters.sortOrder;
+      }
+
       const res = await axios.get(`${API_URL}/services`, { params });
       dispatch(hideSpinner());
       return res.data;
     } catch (err) {
       dispatch(hideSpinner());
-      dispatch(showNotification({
-        type: 'error',
-        title: 'Fetch Error',
-        message: 'Failed to fetch services'
-      }));
-      return rejectWithValue(err.response?.data?.error || 'Failed to fetch services');
+      return rejectWithValue(err.response?.data?.error || 'Server Error');
     }
   }
 );
-
 export const fetchServiceById = createAsyncThunk(
   'services/fetchServiceById',
   async (serviceId, { dispatch, rejectWithValue }) => {
@@ -153,6 +166,46 @@ export const postService = createAsyncThunk(
     
 )
 
+export const createAppointment = createAsyncThunk(
+  'services/createAppointment',
+  async (bookingData, { dispatch, rejectWithValue }) => {
+    try {
+      const res = await axios.post(`${API_URL}/appointments`, bookingData, {
+        withCredentials: true 
+      });
+      dispatch(showNotification({ type: 'success', message: 'Booked successfully!' }));
+      return res.data;
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Booking failed';
+      dispatch(showNotification({ type: 'error', message: msg }));
+      return rejectWithValue(msg);
+    }
+  }
+);
+
+ export const fetchUserOrders = createAsyncThunk(
+  'user/fetchOrders',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await axios.get(`${API_URL}/my-orders`, { withCredentials: true });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || 'Failed to fetch orders');
+    }
+  }
+);
+export const fetchUserAppointments = createAsyncThunk(
+  'user/fetchAppointments',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await axios.get(`${API_URL}/my-appointments`, { withCredentials: true });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error || 'Failed to fetch appointments');
+    }
+  }
+);
+
 
 
 
@@ -165,6 +218,8 @@ const serviceSlice = createSlice({
     appointments: [],
     loading: false,
     error: null,
+    userOrders: [],
+    userAppointments: [],
     filters: {
       category: '',
       search: '',
@@ -293,7 +348,24 @@ const serviceSlice = createSlice({
       .addCase(postService.rejected, (state, action) => {
             state.loading = false
             state.error = action.payload
-      });
+      })
+      .addCase(createAppointment.pending, (state) => {
+            state.loading = true
+            state.error = null
+      })
+      .addCase(createAppointment.fulfilled, (state, action) => {
+            state.loading = false
+            state.userAppointments.unshift(action.payload)
+      })
+      .addCase(createAppointment.rejected, (state, action) => {
+            state.loading = false
+            state.error = action.payload
+      })
+
+
+
+      .addCase(fetchUserOrders.fulfilled, (state, action) => { state.userOrders = action.payload; })
+      .addCase(fetchUserAppointments.fulfilled, (state, action) => { state.userAppointments = action.payload; })
   },
 });
 

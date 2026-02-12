@@ -1,8 +1,8 @@
-"""initial migration
+"""latest migration
 
-Revision ID: 719b3a2b9c64
+Revision ID: 550cb9a87a44
 Revises: 
-Create Date: 2026-02-04 16:13:23.013065
+Create Date: 2026-02-12 14:48:19.025477
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '719b3a2b9c64'
+revision = '550cb9a87a44'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -81,6 +81,9 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('total_price', sa.Integer(), nullable=True),
+    sa.Column('delivery_zone_id', sa.Integer(), nullable=True),
+    sa.Column('exact_location', sa.String(), nullable=True),
+    sa.ForeignKeyConstraint(['delivery_zone_id'], ['delivery_zones.id'], name=op.f('fk_appointments_delivery_zone_id_delivery_zones')),
     sa.ForeignKeyConstraint(['service_id'], ['services.id'], name=op.f('fk_appointments_service_id_services')),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_appointments_user_id_users')),
     sa.PrimaryKeyConstraint('id')
@@ -107,6 +110,7 @@ def upgrade():
     sa.Column('delivery_zone_id', sa.Integer(), nullable=True),
     sa.Column('status', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('exact_location', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['delivery_zone_id'], ['delivery_zones.id'], name=op.f('fk_orders_delivery_zone_id_delivery_zones')),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_orders_user_id_users')),
     sa.PrimaryKeyConstraint('id')

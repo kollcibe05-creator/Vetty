@@ -1,6 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import { useSelector, useDispatch } from 'react-redux';
+import { showNotification } from '../features/uiSlice';
+import ReviewStars from './ReviewStars';
+import { selectReviews } from '../features/reviewSlice';
 const ItemCard = ({ 
   item, 
   type = 'product', 
@@ -9,7 +12,16 @@ const ItemCard = ({
   className = '' 
 }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
   const isProduct = type === 'product';
+  const isAdmin = user?.role?.name === 'Admin';
+
+  const { items: reviews } = useSelector(selectReviews);
+  const productReviews = reviews.filter(r => r.product_id === item.id);
+  const avgRating = productReviews.length
+    ? productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length
+    : 0;
   
   const handleClick = () => {
     if (isProduct) {
@@ -21,7 +33,18 @@ const ItemCard = ({
 
   const handleAction = (e) => {
     e.stopPropagation();
+    
+    // Prevent admin users from using Add to Cart or Book Now
+    if (isAdmin) {
+      dispatch(showNotification({ type: 'warning', message: 'Admin users should use the dashboard for management' }));
+      return;
+    }
+    
     if (isProduct && onAddToCart) {
+      if (!isAuthenticated) {
+        dispatch(showNotification({ type: 'error', message: 'Please login to add items to your cart' }));
+        return;
+      }
       onAddToCart(item);
     } else if (!isProduct && onBookNow) {
       onBookNow(item);
@@ -71,6 +94,15 @@ const ItemCard = ({
           {item.name}
         </h3>
 
+        {avgRating > 0 && (
+  <div className="flex items-center space-x-2">
+    <ReviewStars rating={avgRating} size={4} />
+    <span className="text-xs text-gray-500">
+      ({productReviews.length})
+    </span>
+  </div>
+)}
+
         {/* Description */}
         {item.description && (
           <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">
@@ -102,21 +134,24 @@ const ItemCard = ({
         {/* Action Button */}
         <button
           onClick={handleAction}
-          disabled={isProduct && item.stock_quantity === 0}
+          disabled={isProduct && ((item.stock_quantity === 0) || isAdmin || !item.stock_quantity)}
           className={`
             w-full py-2.5 px-4 rounded-lg font-medium text-sm
             transition-all duration-200 transform active:scale-95
             ${
               isProduct && item.stock_quantity === 0
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : isAdmin
+                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
                 : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md'
             }
           `}
         >
           {isProduct ? (
+            isAdmin ? 'Admin View' :
             item.stock_quantity > 0 ? 'Add to Cart' : 'Out of Stock'
           ) : (
-            'Book Now'
+            isAdmin ? 'Admin View' : 'Book Now'
           )}
         </button>
       </div>

@@ -1,20 +1,22 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { fetchCart } from '../features/cartSlice';
+import { fetchCart, processCheckout } from '../features/cartSlice';
 import { showSpinner, hideSpinner, showNotification, showMpesaModal } from '../features/uiSlice';
-import { selectCart } from '../features/cartSlice';
+import { selectCart, selectCartTotal, selectCartLoading } from '../features/cartSlice';
 
 const Home = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { items, loading, totalAmount } = useSelector(selectCart);
+  const {items} = useSelector(selectCart);
+  const totalAmount = useSelector(selectCartTotal);
+  const loading = useSelector(selectCartLoading);
 
   React.useEffect(() => {
     dispatch(fetchCart());
   }, [dispatch]);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (items.length === 0) {
       dispatch(showNotification({
         type: 'warning',
@@ -24,8 +26,14 @@ const Home = () => {
       return;
     }
     
-    // Navigate to checkout or show M-Pesa modal directly
-    dispatch(showMpesaModal());
+    try {
+      await dispatch(processCheckout()).unwrap();
+      
+
+      dispatch(showMpesaModal());
+    } catch (error) {
+      console.error('Checkout failed:', error);
+    }
   };
 
   return (
