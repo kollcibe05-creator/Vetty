@@ -16,7 +16,6 @@ export const fetchCart = createAsyncThunk('cart/fetch', async (_, { rejectWithVa
     const res = await api.get('/cart');
     return res.data;
   } catch (err) {
-    // Don't retry on 401 - user is not authenticated
     if (err.response?.status === 401) {
       return rejectWithValue('Not authenticated');
     }
@@ -40,7 +39,6 @@ export const processMpesaPayment = createAsyncThunk(
   async (paymentData, { rejectWithValue, dispatch }) => {
     try {
       dispatch(showSpinner({ message: 'Initiating M-Pesa payment...' }));
-      // This matches your backend route for STK Push/Payments
       const res = await api.post('/payments/mpesa', paymentData); 
       dispatch(hideSpinner());
       dispatch(showNotification({ 
@@ -71,7 +69,7 @@ export const removeFromCart = createAsyncThunk('cart/remove', async (itemId, { r
     dispatch(showSpinner({ message: 'Removing item...' }));
     const res = await api.delete(`/cart-items/${itemId}`);
     dispatch(hideSpinner());
-    return itemId; // Return the removed item ID
+    return itemId; 
   } catch (err) {
     return handleAsyncError(err, dispatch, 'Failed to remove item', rejectWithValue);
   }
@@ -100,7 +98,7 @@ export const processCheckout = createAsyncThunk(
         title: 'Success', 
         message: 'Order placed successfully!' 
       }));
-      dispatch(clearCartState()); // Clear the cart locally after success
+     
       return res.data;
     } catch (err) {
       return handleAsyncError(err, dispatch, 'Checkout failed', rejectWithValue);
@@ -108,7 +106,6 @@ export const processCheckout = createAsyncThunk(
   }
 );
 
-// ... Repeat similar cleanup for updateCartItem, removeFromCart, etc., using api.patch/api.delete
 
 const cartSlice = createSlice({
   name: 'cart',
@@ -123,7 +120,7 @@ const cartSlice = createSlice({
     builder
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.cart_items || [];
+        state.items = action.payload.items || [];
         state.totalAmount = action.payload.total_amount || 0;
         state.isAuthenticated = true;
       })
@@ -144,13 +141,21 @@ const cartSlice = createSlice({
         const removedItemId = action.payload;
         state.items = state.items.filter(item => item.id !== removedItemId);
         // Recalculate total
-        state.totalAmount = state.items.reduce((total, item) => total + (item.quantity * item.product.price), 0);
+        state.totalAmount = state.items.reduce((total, item) => total + (item.quantity * item.product.price) || 0, 0);
       })
       .addCase(clearCart.fulfilled, (state) => {
         state.loading = false;
         state.items = [];
         state.totalAmount = 0;
         state.isAuthenticated = false;
+      })
+      .addCase(processCheckout.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = []; 
+      })
+      .addCase(processMpesaPayment.fulfilled, (state) => {
+        state.loading = false;
+        state.totalAmount = 0; 
       })
       .addMatcher(
         (action) => action.type.startsWith('cart/') && action.type.endsWith('/pending'),
@@ -170,9 +175,8 @@ const cartSlice = createSlice({
   },
 });
 
-// Selectors - This is what Home.jsx is looking for!
-// Selectors - Safe versions with fallbacks
-export const selectCart = (state) => state.cart?.items || []; 
+
+export const selectCart = (state) => state.cart || {items: [], totalAmount: 0}; 
 export const selectCartTotal = (state) => state.cart?.totalAmount || 0;
 export const selectCartLoading = (state) => state.cart?.loading || false;
 export const selectCartError = (state) => state.cart?.error || null;

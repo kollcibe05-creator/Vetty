@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import { fetchReviews, selectReviews } from '../features/reviewSlice';
+import ReviewStars from '../components/ReviewStars';
+import ReviewSection from '../components/ReviewSection';
 import { 
   fetchProductById, 
   fetchProducts,
@@ -12,34 +15,51 @@ import { addToCart } from '../features/cartSlice';
 import { showNotification } from '../features/uiSlice';
 import ItemCard from '../components/ItemCard';
 
+
+
+
+
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  useEffect(() => {
+  dispatch(fetchReviews()); 
+}, [dispatch]);
   
-  // Redux State
+
+
   const product = useSelector(selectCurrentProduct);
   const isLoading = useSelector(selectProductLoading);
   const allProducts = useSelector(selectAllProducts) || [];
 
-  // Local State
+const { items: reviews, loading, error } = useSelector(selectReviews);
+
+
+
+const productReviews = reviews.filter(r => r.product_id === product?.id);
+
+const avgRating = productReviews.length 
+    ? productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length
+    : 0;
+
+
+ 
   const [selectedQuantity, setSelectedQuantity] = useState(1);
 
-  // 1. Data Fetching Effect
+
   useEffect(() => {
     if (id) {
       dispatch(fetchProductById(id));
-      
-      // If the user refreshed the page, 'items' might be empty. 
-      // Fetch them silently so "Related Products" works.
+ 
       if (allProducts.length === 0) {
         dispatch(fetchProducts({ background: true }));
       }
     }
   }, [dispatch, id, allProducts.length]);
 
-  // 2. UI Reset Effect (Fixes the ESLint "setState" warning)
-  // We separate this so it only runs when the ID specifically changes
+
   
   useEffect(() => {
     setSelectedQuantity(1);
@@ -65,7 +85,7 @@ const ProductDetail = () => {
     }
   };
 
-  // Loading View
+  // Loading 
   if (isLoading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
@@ -75,7 +95,7 @@ const ProductDetail = () => {
     );
   }
 
-  // Not Found View
+  // Not Found
   if (!product) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
@@ -139,6 +159,14 @@ const ProductDetail = () => {
                 Ksh. {product.price?.toLocaleString()}
               </p>
 
+                {/* Star Rating */}
+                {avgRating > 0 && (
+                  <div className="flex items-center mb-4 space-x-2">
+                    <ReviewStars rating={avgRating} size={5} />
+                    <span className="text-sm text-gray-500">({productReviews.length} reviews)</span>
+                  </div>
+                )}
+
               <div className="prose prose-sm text-gray-600 mb-8 border-t border-b border-gray-50 py-6">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Description</h3>
                 <p>{product.description}</p>
@@ -179,6 +207,9 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
+        <section className="mt-16">
+          <ReviewSection productId={id} />
+        </section>
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (

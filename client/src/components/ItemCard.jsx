@@ -2,7 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { showNotification } from '../features/uiSlice';
-
+import ReviewStars from './ReviewStars';
+import { selectReviews } from '../features/reviewSlice';
 const ItemCard = ({ 
   item, 
   type = 'product', 
@@ -15,6 +16,12 @@ const ItemCard = ({
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const isProduct = type === 'product';
   const isAdmin = user?.role?.name === 'Admin';
+
+  const { items: reviews } = useSelector(selectReviews);
+  const productReviews = reviews.filter(r => r.product_id === item.id);
+  const avgRating = productReviews.length
+    ? productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length
+    : 0;
   
   const handleClick = () => {
     if (isProduct) {
@@ -86,6 +93,15 @@ const ItemCard = ({
         <h3 className="font-semibold text-gray-900 text-lg leading-tight line-clamp-2">
           {item.name}
         </h3>
+
+        {avgRating > 0 && (
+  <div className="flex items-center space-x-2">
+    <ReviewStars rating={avgRating} size={4} />
+    <span className="text-xs text-gray-500">
+      ({productReviews.length})
+    </span>
+  </div>
+)}
 
         {/* Description */}
         {item.description && (

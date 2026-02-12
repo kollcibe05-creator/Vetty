@@ -6,12 +6,20 @@ import { fetchServiceById, fetchServices, createAppointment } from '../features/
 import { selectCurrentService, selectServiceLoading, selectServices } from '../features/serviceSlice';
 import { showNotification } from '../features/uiSlice';
 import ItemCard from '../components/ItemCard';
+import { fetchReviews, selectReviews } from '../features/reviewSlice';
+import ReviewStars from '../components/ReviewStars'
+import ReviewSection from '../components/ReviewSection';
 
 const ServiceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+
+  
+
+
+  
 const {items} = useSelector(selectServices)
 const service = useSelector(selectCurrentService);
 const isLoading = useSelector(selectServiceLoading);
@@ -25,11 +33,24 @@ const [notes, setNotes] = useState('');
 
   //added
   const [zones, setZones] = useState([]);
+  const [exactLocation, setExactLocation] = useState('');
+
   const [selectedZoneId, setSelectedZoneId] = useState('');
+
+    const { items: reviews } = useSelector(selectReviews);
+
+  useEffect(() => {
+  dispatch(fetchReviews()); 
+}, [dispatch]);
+  const serviceReviews = reviews.filter(r => r.service_id === service?.id);
+const avgRating = serviceReviews.length
+    ? serviceReviews.reduce((sum, r) => sum + r.rating, 0) / serviceReviews.length
+    : 0;
+
 
   useEffect(() => {
     if (isBooking) {
-      axios.get('https://thallous-nongraduated-doris.ngrok-free.dev/delivery-zones', {
+      axios.get('http://127.0.0.1:5555/delivery-zones', {
         headers: { 
           'ngrok-skip-browser-warning': 'true',
           'Accept': 'application/json',
@@ -85,8 +106,8 @@ const [notes, setNotes] = useState('');
   }
 
   const submitBooking = async () => {
-    if (!bookingDate || !selectedZoneId) {
-      dispatch(showNotification({type: 'error', message: 'Please select a date, time and location'}) )
+    if (!bookingDate || !selectedZoneId ||!exactLocation.trim()) {
+      dispatch(showNotification({type: 'error', message: 'Please select a date, time, location and exact address'}) )
       return
     }
     const zone = zones.find(z => z.id === parseInt(selectedZoneId));
@@ -96,6 +117,7 @@ const [notes, setNotes] = useState('');
         service_id: service.id,
         appointment_date: bookingDate,
         delivery_zone_id: selectedZoneId,
+        exact_location: exactLocation,
         total_price: finalPrice,
         notes
     }));
@@ -103,6 +125,7 @@ const [notes, setNotes] = useState('');
       setIsBooking(false)
       setBookingDate('')
       setNotes('')
+      setExactLocation('')
       navigate('/mpesaForm', {state: {
         amount: finalPrice,
         appointmentId: result.payload.id
@@ -163,6 +186,13 @@ const [notes, setNotes] = useState('');
                   <span className="text-sm text-gray-500 ml-1">/session</span>
                 </div>
               </div>
+              {/* Star Rating */}
+              {avgRating > 0 && (
+                <div className="flex items-center mb-4 space-x-2">
+                  <ReviewStars rating={avgRating} size={5} />
+                  <span className="text-sm text-gray-500">({serviceReviews.length} reviews)</span>
+                </div>
+              )}
 
               {/* Category */}
               {service.category && (
@@ -185,13 +215,16 @@ const [notes, setNotes] = useState('');
               <button
                 onClick={handleBookNow}
                 className="w-full py-3 px-6 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-200 transform active:scale-95"
-              >
+                >
                 Book Now
               </button>
               
             </div>
           </div>
         </div>
+        <section className="mt-16">
+          <ReviewSection serviceId={id} />
+        </section>
 
         {/* Related Services */}
         <div className="mt-12">
@@ -229,6 +262,17 @@ const [notes, setNotes] = useState('');
                     <option key={z.id} value={z.id}>{z.zone_name} (+ Ksh {z.delivery_fee})</option>
                   ))}
                 </select>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Exact Address / Apartment
+            </label>
+            <input
+              type="text"
+              className="w-full border rounded-lg p-2 mb-4"
+              placeholder="e.g. Manchester Apartment 3B"
+              value={exactLocation}
+              onChange={(e) => setExactLocation(e.target.value)}
+            />
+
 
             <label className="block text-sm font-medium mb-1">Notes</label>
             <textarea 

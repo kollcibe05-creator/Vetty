@@ -1,87 +1,133 @@
+
+
 import NavLink from './NavLink';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../features/authSlice';
-// import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import { selectCart } from '../features/cartSlice';
+import { fetchInventory } from '../features/adminSlice'; 
+
+
 
 const Navbar = () => {
   const { isAuthenticated, user } = useSelector(state => state.auth);
-  const { items } = useSelector(selectCart);
+  const cart = useSelector(selectCart);
   const dispatch = useDispatch();
+  const alerts = useSelector(fetchInventory); 
 
-  // Helper to check if user is Admin (handles string or nested object)
-  const isAdmin = user?.role === 'Admin' || user?.role?.name === 'Admin';
+  const role = user?.role?.name || user?.role;
+  const isAdmin = role === 'Admin';
 
   return (
     <nav className="bg-blue-600 text-white p-4 shadow-lg">
       <div className="container mx-auto flex justify-between items-center">
+
+        {/* Logo */}
         <div className="text-xl font-bold">
-          <NavLink to="/home" className="hover:text-blue-200">Vetty</NavLink>
+          <NavLink to="/home" className="hover:text-blue-200">
+            Vetty
+          </NavLink>
         </div>
 
-        <div className="flex space-x-4 items-center">
+        <div className="flex items-center space-x-6">
+
           {/* Public Links */}
-          <NavLink to="/home" className="hover:text-blue-200">Home</NavLink>
-          <NavLink to="/products" className="hover:text-blue-200">Products</NavLink>
-          <NavLink to="/services" className="hover:text-blue-200">Services</NavLink>
+          <NavLink to="/home">Home</NavLink>
+          <NavLink to="/products">Products</NavLink>
+          <NavLink to="/services">Services</NavLink>
 
-          {isAuthenticated ? (
+          {/* -------- AUTHENTICATED USERS -------- */}
+          {isAuthenticated && (
             <>
-              <NavLink to="/cart" className="relative p-2 hover:bg-blue-500 rounded-full transition-colors">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    {items.length > 0 && (
-                      <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                        {items.length}
-                      </span>
-                    )}
-              </NavLink>
-              {/* --- USER SPECIFIC LINKS --- */}
-              <NavLink to="/profile/user-dashboard" className="hover:text-blue-200">Profile</NavLink>
-              
+              {/* Cart (Users only) */}
               {!isAdmin && (
-                <>
-                   <NavLink to="/profile/user-dashboard" className="hover:text-blue-200">Dashboard</NavLink>
+                <NavLink
+                  to="/cart"
+                  className="relative p-2 hover:bg-blue-500 rounded-full transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
 
-                {/* //   <NavLink to="/profile/service-stats" className="hover:text-blue-200">My Services</NavLink>
-                //   <NavLink to="/profile/product-stats" className="hover:text-blue-200">My Orders</NavLink> */}
-                </>
+                  {cart.items?.length > 0 && (
+                    <span className="absolute top-0 right-0 bg-red-500 text-xs px-1.5 py-0.5 rounded-full">
+                      {cart.items.length}
+                    </span>
+                  )}
+                </NavLink>
               )}
 
-              {/* --- SELLER SPECIFIC SECTION --- */}
+              {/* Profile Icon */}
+              <NavLink to="/profile">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-6 h-6 hover:text-blue-200"
+                >
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </NavLink>
+
+              {/* -------- ADMIN LINKS -------- */}
               {isAdmin && (
-                <div className="flex space-x-3 border-l border-blue-400 pl-3">
-                  <NavLink to="/admin" className="text-yellow-300 hover:text-white">Seller Dashboard</NavLink>
-                  <NavLink to="/admin/stock" className="hover:text-blue-200">Inventory</NavLink>
-                  <NavLink to="/admin/approval-stats" className="hover:text-blue-200">Approvals</NavLink>
-                  <NavLink to="/admin/product-form" className="hover:text-blue-200">+Product</NavLink>
+                <div className="flex items-center space-x-4 border-l border-blue-400 pl-4">
+                  <NavLink to="/admin/dashboard" className="text-yellow-300">
+                    AdminDashboard
+                  </NavLink>
+                  <NavLink to="/admin/products">Manage Products</NavLink>
+                  <NavLink to="/admin/services">Manage Services</NavLink>
+                  <NavLink to="/admin/categories">Manage Categories</NavLink>
+                  <NavLink to="/admin/inventory-alert" className="relative p-2 hover:bg-blue-500 rounded-full transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                      d="M13 16h-1v-4h-1m1 0V8m0 4h1m4 4h1v-4h1m-1 0V8m0 4h-1m-8 4H5v-4H4m1 0V8m0 4h1" 
+                    />
+                  </svg>
+                  {alerts.length > 0 && (
+                    <span className="absolute top-0 right-0 bg-red-500 text-xs px-1.5 py-0.5 rounded-full">
+                      {alerts.length}
+                    </span>
+                  )}
+                </NavLink>
+                  <NavLink to="/admin/delivery-zones">Manage delivery zones</NavLink>
+                  <NavLink to="/admin/approval-stats">ApprovalStats</NavLink>
+                  <NavLink to="/admin/orders">OrderStats</NavLink>
+                  <NavLink to="/admin/users">userDetails</NavLink>
                 </div>
               )}
 
-              {/* --- BUYER SPECIFIC SECTION --- */}
-              {isAuthenticated && !isAdmin && (
-                <div className="flex space-x-3 border-l border-blue-400 pl-3">
-                  <NavLink to="/products" className="hover:text-blue-200">Marketplace</NavLink>
-                  <NavLink to="/profile" className="hover:text-blue-200">Profile</NavLink>
-                  <NavLink to="/dashboard" className="hover:text-blue-200">My Orders</NavLink>
-                </div>
+              {/* -------- USER LINKS -------- */}
+              {!isAdmin && (
+                <NavLink to="/profile/user-dashboard">
+                  My Dashboard
+                </NavLink>
               )}
 
-              <button 
-                onClick={() => dispatch(logout())} 
-                className="bg-white text-blue-600 px-4 py-2 rounded hover:bg-blue-100 transition-colors"
+              {/* Logout */}
+              <button
+                onClick={() => dispatch(logout())}
+                className="bg-white text-blue-600 px-4 py-2 rounded hover:bg-blue-100 transition"
               >
                 Logout
               </button>
             </>
-          ) : (
+          )}
+
+          {/* -------- GUEST -------- */}
+          {!isAuthenticated && (
             <>
-              {/* --- GUEST LINKS --- */}
-              <NavLink to="/login" className="hover:text-blue-200">Login</NavLink>
-              <NavLink to="/signup" className="hover:text-blue-200">Signup</NavLink>
+              <NavLink to="/login">Login</NavLink>
+              <NavLink to="/signup">Signup</NavLink>
             </>
           )}
+
         </div>
       </div>
     </nav>

@@ -8,7 +8,7 @@ import { selectCart, selectCartTotal, selectCartLoading } from '../features/cart
 const Home = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const items = useSelector(selectCart);
+  const {items} = useSelector(selectCart);
   const totalAmount = useSelector(selectCartTotal);
   const loading = useSelector(selectCartLoading);
 
@@ -27,13 +27,11 @@ const Home = () => {
     }
     
     try {
-      // Process checkout (creates order and updates stock)
       await dispatch(processCheckout()).unwrap();
       
-      // After successful checkout, show M-Pesa modal for payment
+
       dispatch(showMpesaModal());
     } catch (error) {
-      // Error is already handled in the thunk
       console.error('Checkout failed:', error);
     }
   };

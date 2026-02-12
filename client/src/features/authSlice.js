@@ -4,7 +4,6 @@ import axios from 'axios';
 const API_URL = 'http://127.0.0.1:5555';
 const config = { withCredentials: true };
 
-// --- Thunks ---
 
 export const login = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
   try {
@@ -42,6 +41,37 @@ export const checkSession = createAsyncThunk('auth/checkSession', async (_, { re
   }
 });
 
+export const getProfile = createAsyncThunk(
+  "auth/getProfile",
+  async (_, thunkAPI) => {
+    try {
+      const res = await fetch("http://127.0.0.1:5555/profile", {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error("Failed to fetch profile");
+      return await res.json();
+    } catch (err) {
+      return thunkAPI.rejectWithValue(err.message);
+    }
+  }
+);
+
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (data, thunkAPI) => {
+    const res = await fetch("http://127.0.0.1:5555/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: 'include',      
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Failed to update profile");
+    return res.json();
+  }
+  
+);
+
+
 // --- Slice ---
 
 const authSlice = createSlice({
@@ -62,7 +92,33 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // 1. Success cases
+
+       .addCase(getProfile.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    })
+    .addCase(getProfile.fulfilled, (state, action) => {
+      state.user = action.payload;
+      state.loading = false;
+    })
+    .addCase(getProfile.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    })
+
+
+    .addCase(updateProfile.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    })
+    .addCase(updateProfile.fulfilled, (state, action) => {
+      state.user = action.payload;
+      state.loading = false;
+    })
+    .addCase(updateProfile.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    })
       .addMatcher(
         isAnyOf(login.fulfilled, signup.fulfilled, checkSession.fulfilled),
         (state, action) => {
@@ -73,7 +129,7 @@ const authSlice = createSlice({
           state.error = null;
         }
       )
-      // 2. Failure/Logout cases
+
       .addMatcher(
         isAnyOf(logout.fulfilled, checkSession.rejected),
         (state) => {
@@ -83,7 +139,7 @@ const authSlice = createSlice({
           state.initialized = true;
         }
       )
-      // 3. Global Loading State
+
       .addMatcher(
         isAnyOf(login.pending, signup.pending, checkSession.pending, logout.pending),
         (state) => {
@@ -91,14 +147,16 @@ const authSlice = createSlice({
           state.error = null;
         }
       )
-      // 4. Handle Errors
+
       .addMatcher(
         isAnyOf(login.rejected, signup.rejected),
         (state, action) => {
           state.loading = false;
           state.error = action.payload;
         }
-      );
+      )
+     
+
   },
 });
 

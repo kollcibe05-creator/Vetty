@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { signup } from '../features/authSlice';
 import { useNavigate } from 'react-router-dom';
+import { showNotification } from '../features/uiSlice';
 
 const Signup = () => {
   const [username, setUsername] = useState('');
@@ -16,13 +17,18 @@ const Signup = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isSeller) {
+      dispatch(showNotification({message: 'Seller feature coming soon'}))
+      navigate('/signup')
+      return
+    }
     const userData = { 
       username, 
       email, 
       password,
-      role: isSeller ? 'Admin' : 'Customer',
-      businessName: isSeller ? businessName : undefined,
-      businessDescription: isSeller ? businessDescription : undefined
+      role: 'User',
+      // businessName: isSeller ? businessName : undefined,
+      // businessDescription: isSeller ? businessDescription : undefined
     };
     dispatch(signup(userData)).then(action => {
       if (action.meta.requestStatus === 'fulfilled') navigate('/login');

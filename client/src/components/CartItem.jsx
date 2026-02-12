@@ -16,7 +16,7 @@ const CartItem = ({ item }) => {
       }))
       return
     }
-    dispatch(updateCartItem({ cartItemId: item.id, quantity: newQuantity }));
+    dispatch(updateCartItem({ itemId: item.id, quantity: newQuantity }));
   };
 
   const handleRemove = () => {

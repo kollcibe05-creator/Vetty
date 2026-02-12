@@ -10,7 +10,6 @@ export const fetchProducts = createAsyncThunk(
   async (arg = {}, { dispatch, rejectWithValue }) => {
     const {background = false, ...filters} = arg
     try {
-      // Only show spinner if we aren't doing a background refresh
       if (!background) dispatch(showSpinner({message: "Loading products..."}));
       const queryParams = {}
       if (filters.category) queryParams.category = filters.category;
@@ -23,7 +22,6 @@ export const fetchProducts = createAsyncThunk(
       return res.data;
     } catch (err) {
       dispatch(hideSpinner());
-      // Optional: Don't spam notifications for background fetches
       if (!params.background) {
         dispatch(showNotification({ type: 'error', title: 'Fetch Error', message: 'Failed to fetch products' }));
       }
@@ -60,10 +58,7 @@ export const searchProducts = createAsyncThunk(
   }
 );
 
-// ... (Keep your existing patch/post/delete thunks here if you need them, omitted for brevity but they are safe to keep) ...
 
-
-// --- Slice ---
 const productSlice = createSlice({
   name: 'products',
   initialState: {
@@ -96,12 +91,10 @@ const productSlice = createSlice({
       .addCase(fetchProductById.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
       // Search
       .addCase(searchProducts.fulfilled, (state, action) => { state.loading = false; state.items = action.payload; });
-      // (Add other extraReducers for patch/post/delete as needed)
+
   },
 });
 
-// --- Selectors ---
-// THIS WAS MISSING AND CAUSED THE BLANK PAGE
 export const selectAllProducts = (state) => state.products.items; 
 
 export const selectProducts = (state) => state.products;

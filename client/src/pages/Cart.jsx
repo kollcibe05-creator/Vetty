@@ -1,36 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { selectCart, fetchCart, processCheckout } from '../features/cartSlice';
+import { selectCart, fetchCart, processCheckout, selectCartTotal } from '../features/cartSlice';
 import CartItem from '../components/CartItem';
 import axios from 'axios';
 
 const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { items, totalAmount } = useSelector(selectCart);
+  const  {items} = useSelector(selectCart);
+  const  totalAmount  = useSelector(selectCartTotal);
   
   const [zones, setZones] = useState([]);
   const [formData, setFormData] = useState({ zone_id: '', address: '' });
 
   useEffect(() => {
     dispatch(fetchCart());
-    // Fetch delivery zones from your backend
-    axios.get('https://thallous-nongraduated-doris.ngrok-free.dev/delivery-zones')
+
+    axios.get('http://127.0.0.1:5555/delivery-zones')
       .then(res => setZones(res.data));
   }, [dispatch]);
 
   const handleCheckout = async (e) => {
     e.preventDefault();
     try {
-      // 1. Process Order Creation on Backend
-      await dispatch(processCheckout({ 
+
+      const result = await dispatch(processCheckout({ 
         delivery_zone_id: formData.zone_id, 
-        address: formData.address 
+        exact_location: formData.address 
       })).unwrap();
-      
-      // 2. Auto-navigate to M-Pesa
-      navigate('/mpesaForm');
+
+      navigate('/mpesaForm', {
+        state: {
+          orderId: result.order_id,
+          amount: finalTotal
+        }
+      });
     } catch (err) {
       console.error("Checkout failed", err);
     }
@@ -42,6 +47,13 @@ const Cart = () => {
       <button onClick={() => navigate('/products')} className="mt-4 text-blue-600 underline">Go Shopping</button>
     </div>
   );
+
+
+const selectedZone = zones.find(z => z.id === Number(formData.zone_id));
+const deliveryFee = selectedZone ? selectedZone.delivery_fee : 0;
+
+const finalTotal = Number(totalAmount) + Number(deliveryFee);
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -80,7 +92,7 @@ const Cart = () => {
           <div className="border-t pt-4">
             <div className="flex justify-between text-lg font-bold">
               <span>Total Amount:</span>
-              <span className="text-blue-600">KES {totalAmount.toLocaleString()}</span>
+              <span className="text-blue-600">KES {finalTotal.toLocaleString()}</span>
             </div>
           </div>
 

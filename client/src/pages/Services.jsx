@@ -22,10 +22,12 @@ const Services = () => {
 
   //added
   const [zones, setZones] = useState([]);
+  const [exactLocation, setExactLocation] = useState('');
+
   const [selectedZoneId, setSelectedZoneId] = useState('');
   useEffect(() => {
     if (selectedService) {
-      axios.get('https://thallous-nongraduated-doris.ngrok-free.dev/delivery-zones', {
+      axios.get('http://127.0.0.1:5555/delivery-zones', {
         headers: { 
           'ngrok-skip-browser-warning': 'true',
           'Accept': 'application/json',
@@ -56,8 +58,8 @@ const handleCategoryChange = (categoryName) => {
 
 
 const submitBooking = async () => {
-    if (!bookingDate || !selectedZoneId) {
-      dispatch(showNotification({ type: 'error', message: 'Please select a date, time and location' }));
+    if (!bookingDate || !selectedZoneId || !exactLocation.trim()) {
+      dispatch(showNotification({ type: 'error', message: 'Please select a date, time, location and exact address' }));
 
       return;
     }
@@ -69,6 +71,7 @@ const submitBooking = async () => {
       service_id: selectedService.id,
       appointment_date: bookingDate,
       delivery_zone_id: selectedZoneId,
+      exact_location: exactLocation,
       total_price:finalPrice,
       notes
     }));
@@ -78,6 +81,7 @@ const submitBooking = async () => {
       setSelectedService(null);
       setBookingDate('');
       setNotes('');
+      setExactLocation('')
 
       navigate('/mpesaForm', {
         state: {
@@ -119,11 +123,9 @@ const submitBooking = async () => {
   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-gray-200 pb-4">
     <CategoryFilter 
       category_type="Service" 
-      // This sends the name (e.g., 'Grooming') to Redux
       onSelectedCategory={handleCategoryChange} 
     />
     
-    {/* Optional: Keep the Sort Logic */}
     <select 
       className="bg-transparent text-sm font-medium text-gray-600 outline-none cursor-pointer"
       onChange={(e) => dispatch(setFilters({ sortBy: e.target.value }))}
@@ -160,6 +162,17 @@ const submitBooking = async () => {
                   <option key={z.id} value={z.id}>{z.zone_name} (+ Ksh {z.delivery_fee})</option>
                 ))}
               </select>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Exact Address / Apartment
+            </label>
+            <input
+              type="text"
+              className="w-full border rounded-lg p-2 mb-4"
+              placeholder="e.g. Manchester Apartment 3B"
+              value={exactLocation}
+              onChange={(e) => setExactLocation(e.target.value)}
+            />
+
 
             <label className="block text-sm font-medium text-gray-700 mb-1">Notes for the provider</label>
             <textarea 
@@ -202,6 +215,7 @@ const submitBooking = async () => {
                       return 
                     }
                     setSelectedService(service)
+                    
                   }}
                 />
               ))}

@@ -1,43 +1,31 @@
-import { createBrowserRouter, Outlet, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
-import Navbar from './Navbar';
-import Footer from './Footer';
+
 
 import Login from '../pages/Login';
 import Signup from '../pages/Signup';
 import SellerSignup from '../pages/SellerSignup';
 import Profile from '../pages/Profile';
-import Admin from '../pages/Admin';
 import Home from '../pages/Home';
 import MpesaForm from '../pages/MpesaForm';
 import Products from '../pages/Products';
 import Services from '../pages/Services';
 import ProductDetail from '../pages/ProductDetail';
 import ServiceDetail from '../pages/ServiceDetail';
-import AccountDetails from '../pages/AccountDetails';
-import ServiceStats from '../pages/ServiceStats';
-import ProductStats from '../pages/ProductStats';
-import AdminDashboard from '../pages/AdminDashboard';
-import AdminStats from '../pages/admin/ApprovalStats';
-import StockManagement from '../pages/admin/StockManagement';
-import ProductForm from '../pages/admin/ProductForm';
-import ServiceForm from '../pages/admin/ServiceForm';
 import ApprovalStats from '../pages/admin/ApprovalStats';
-// import UserDashboard from '../pages/allUserDashboard';
-import DashboardOverview from '../pages/admin/DashboardOverview';
-import OrderRow from '../pages/admin/OrderRow';
 import Cart from '../pages/Cart';
 import UserDashboard from '../pages/userDashboard';
+import AdminOrders from '../pages/admin/AdminOrders';
+import CategoryAdmin from '../pages/admin/CategoryAdmin';
+import ServiceAdmin from '../pages/admin/ServiceAdmin';
+import ProductAdmin from '../pages/admin/AdminProduct';
+import DeliveryZoneAdmin from '../pages/admin/DeliveryZoneAdmin';
+import InventoryAlertAdmin from '../pages/admin/InventoryAlertAdmin';
+import AdminUsers from '../pages/admin/AdminUsers';
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import Layout from '../pages/Layout';
+import ErrorPage from '../pages/ErrorPage';
 
-const Layout = () => (
-  <div className="flex flex-col min-h-screen">
-    <Navbar />
-    <main className="flex-grow container mx-auto px-4 py-6">
-      <Outlet />
-    </main>
-    <Footer />
-  </div>
-);
 
 const router = createBrowserRouter([
   {
@@ -55,15 +43,13 @@ const router = createBrowserRouter([
       { path: 'services/:id', element: <ServiceDetail /> },
       {path: 'cart', element: <Cart/>},
       { path: 'mpesaForm', element: <MpesaForm /> },
+      
 
       
       {
         element: <ProtectedRoute allowedRoles={['User']}/>,  
         children: [
           { path: 'profile', element: <Profile /> },
-          { path: 'profile/account', element: <AccountDetails /> },
-          // { path: 'profile/service-stats', element: <ServiceStats /> },
-          // { path: 'profile/product-stats', element: <ProductStats /> },
           { path: 'profile/user-dashboard', element: <UserDashboard /> },
         ],
       },
@@ -72,24 +58,23 @@ const router = createBrowserRouter([
       {
         element: <ProtectedRoute allowedRoles={['Admin']} />,
         children: [
-          { path: 'admin', element: <DashboardOverview /> },
-          // { path: 'admin/test', element: <TestAdmin /> },
+          { path: 'profile', element: <Profile /> },
           { path: 'admin/dashboard', element: <AdminDashboard /> },
-          { path: 'admin/stats', element: <AdminStats /> },
-          { path: 'admin/stock', element: <StockManagement /> },
-          { path: 'admin/product-form', element: <ProductForm /> },
-          { path: 'admin/service-form', element: <ServiceForm /> },
+          { path: 'admin/products', element: <ProductAdmin /> },
+          { path: 'admin/services', element: <ServiceAdmin/> },
           { path: 'admin/approval-stats', element: <ApprovalStats /> },
-          { path: 'admin/order-row', element: <OrderRow /> },
+          { path: 'admin/orders', element: <AdminOrders /> },
+          { path: 'admin/categories', element: <CategoryAdmin /> },
+          { path: 'admin/delivery-zones', element: <DeliveryZoneAdmin /> },
+          { path: 'admin/inventory-alert', element: <InventoryAlertAdmin /> },
+          { path: 'admin/users', element: <AdminUsers /> },
+
         ],
       },
-
-      
-      // { path: 'debug', element: <DebugAuth /> },
       { path: '', element: <Navigate to="/home" replace /> },
 
       
-      { path: '*', element: <div className="text-center mt-10 text-2xl">404 - Page not found</div> },
+      { path: '*', element: <ErrorPage /> },
     ],
   },
 ]);
