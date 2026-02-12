@@ -9,7 +9,7 @@ const ModalRoot = () => {
   return (
     <>
       {modals.mpesa && <MpesaModal />}
-      {/* Add other modals here as they are created */}
+      {/*Other modals */}
     </>
   );
 };

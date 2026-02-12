@@ -31,7 +31,6 @@ const router = createBrowserRouter([
     path: '/',
     element: <Layout />,
     children: [
-      // --- 1. Public Routes ---
       { path: 'home', element: <Home /> },
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <Signup /> },
@@ -41,9 +40,8 @@ const router = createBrowserRouter([
       { path: 'services', element: <Services /> },
       { path: 'services/:id', element: <ServiceDetail /> },
       { path: 'cart', element: <Cart /> },
-      
-      // Combined redundant M-Pesa routes into one standard path
-      { path: 'mpesa-payment', element: <MpesaForm /> },
+
+      { path: 'mpesaForm', element: <MpesaForm /> },
 
       // --- 2. Shared Dashboard (History & Account) ---
       {
@@ -54,7 +52,6 @@ const router = createBrowserRouter([
         ],
       },
 
-      // --- 3. Management (Sellers & Admins Only) ---
       {
         element: <ProtectedRoute allowedRoles={['Admin', 'Seller', 'admin', 'seller']} />,
         children: [
@@ -71,7 +68,6 @@ const router = createBrowserRouter([
         ],
       },
 
-      // --- Wildcards ---
       { path: '', element: <Navigate to="/home" replace /> },
       { path: '*', element: <ErrorPage /> },
     ],

@@ -2,7 +2,6 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { selectFooterVisible } from '../features/uiSlice';
 import { Link } from 'react-router-dom';
-// Optional: Install react-icons if you haven't: npm install react-icons
 import { FaInstagram, FaTwitter, FaFacebookF, FaWhatsapp } from 'react-icons/fa';
 
 const Footer = () => {
