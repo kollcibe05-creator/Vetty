@@ -1,13 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import api from '../api/axios';
 
-const API_URL = 'http://127.0.0.1:5555';
+// const API_URL = 'http://127.0.0.1:5555';
 
 export const fetchDashboard = createAsyncThunk(
   "admin/fetchDashboard",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/admin/dashboard`, {
+      const res = await api.get(`/admin/dashboard`, {
         withCredentials: true
       });
       return res.data;
@@ -23,7 +24,7 @@ export const fetchAdminStats = createAsyncThunk(
   'admin/fetchAdminStats',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/admin/stats`, {
+      const res = await api.get(`/admin/stats`, {
         withCredentials: true
       });
       return res.data;
@@ -37,7 +38,7 @@ export const fetchInventory = createAsyncThunk(
   'admin/fetchInventory',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/admin/inventory`, {
+      const res = await api.get(`/admin/inventory`, {
         withCredentials: true
       });
       return res.data;
@@ -51,7 +52,7 @@ export const fetchOrders = createAsyncThunk(
   'admin/fetchOrders',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/admin/orders`, {
+      const res = await api.get(`/admin/orders`, {
         withCredentials: true
       });
       return res.data;
@@ -66,7 +67,7 @@ export const fetchAdminAppointments = createAsyncThunk(
   'admin/fetchAdminAppointments',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/admin/appointments`, {
+      const res = await api.get(`/admin/appointments`, {
         withCredentials: true
       });
       return res.data;
@@ -80,8 +81,8 @@ export const updateAdminAppointmentStatus = createAsyncThunk(
   'admin/updateAdminAppointmentStatus',
   async ({ appointmentId, status }, { rejectWithValue }) => {
     try {
-      const res = await axios.patch(
-        `${API_URL}/admin/appointments/${appointmentId}`,
+      const res = await api.patch(
+        `/admin/appointments/${appointmentId}`,
         { status: status },
         { withCredentials: true }
       );
@@ -96,7 +97,7 @@ export const updateAdminOrderStatus = createAsyncThunk(
   "admin/updateAdminOrderStatus",
   async ({ orderId, status }, { rejectWithValue }) => {
     try {
-      const res = await axios.patch(`${API_URL}/admin/orders/${orderId}`, { status }, { withCredentials: true });
+      const res = await api.patch(`/admin/orders/${orderId}`, { status }, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || "Failed to update order status");
@@ -109,7 +110,7 @@ export const deleteAdminOrder = createAsyncThunk(
   "admin/deleteAdminOrder",
   async (orderId, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}/admin/orders/${orderId}`, { withCredentials: true });
+      await api.delete(`/admin/orders/${orderId}`, { withCredentials: true });
       return orderId; 
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || "Failed to delete order");
@@ -122,7 +123,7 @@ export const fetchCategories = createAsyncThunk(
   'admin/fetchCategories',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/categories`, { withCredentials: true });
+      const res = await api.get(`/categories`, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to fetch categories');
@@ -134,7 +135,7 @@ export const createCategory = createAsyncThunk(
   'admin/createCategory',
   async (categoryData, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${API_URL}/categories`, categoryData, { withCredentials: true });
+      const res = await api.post(`/categories`, categoryData, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to create category');
@@ -146,7 +147,7 @@ export const updateCategory = createAsyncThunk(
   'admin/updateCategory',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const res = await axios.patch(`${API_URL}/categories/${id}`, data, { withCredentials: true });
+      const res = await api.patch(`/categories/${id}`, data, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to update category');
@@ -158,7 +159,7 @@ export const deleteCategory = createAsyncThunk(
   'admin/deleteCategory',
   async (id, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}/categories/${id}`, { withCredentials: true });
+      await api.delete(`/categories/${id}`, { withCredentials: true });
       return id;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to delete category');
@@ -171,7 +172,7 @@ export const fetchProducts = createAsyncThunk(
   'admin/fetchProducts',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/products`, { withCredentials: true });
+      const res = await api.get(`/products`, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to fetch products');
@@ -183,7 +184,7 @@ export const createProduct = createAsyncThunk(
   'admin/createProduct',
   async (productData, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${API_URL}/products`, productData, { withCredentials: true });
+      const res = await api.post(`/products`, productData, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to create product');
@@ -195,7 +196,7 @@ export const updateProduct = createAsyncThunk(
   'admin/updateProduct',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const res = await axios.patch(`${API_URL}/products/${id}`, data, { withCredentials: true });
+      const res = await api.patch(`/products/${id}`, data, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to update product');
@@ -207,7 +208,7 @@ export const deleteProduct = createAsyncThunk(
   'admin/deleteProduct',
   async (id, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}/products/${id}`, { withCredentials: true });
+      await api.delete(`/products/${id}`, { withCredentials: true });
       return id;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to delete product');
@@ -220,7 +221,7 @@ export const fetchServices = createAsyncThunk(
   'admin/fetchServices',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/services`, { withCredentials: true });
+      const res = await api.get(`/services`, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to fetch services');
@@ -232,7 +233,7 @@ export const createService = createAsyncThunk(
   'admin/createService',
   async (serviceData, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${API_URL}/services`, serviceData, { withCredentials: true });
+      const res = await api.post(`/services`, serviceData, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to create service');
@@ -244,7 +245,7 @@ export const updateService = createAsyncThunk(
   'admin/updateService',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const res = await axios.patch(`${API_URL}/services/${id}`, data, { withCredentials: true });
+      const res = await api.patch(`/services/${id}`, data, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to update service');
@@ -256,7 +257,7 @@ export const deleteService = createAsyncThunk(
   'admin/deleteService',
   async (id, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}/services/${id}`, { withCredentials: true });
+      await api.delete(`/services/${id}`, { withCredentials: true });
       return id;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to delete service');
@@ -270,7 +271,7 @@ export const fetchDeliveryZones = createAsyncThunk(
   "admin/fetchDeliveryZones",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/delivery-zones`, { withCredentials: true });
+      const res = await api.get(`/delivery-zones`, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || "Failed to fetch delivery zones");
@@ -283,7 +284,7 @@ export const createDeliveryZone = createAsyncThunk(
   "admin/createDeliveryZone",
   async (data, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${API_URL}/delivery-zones`, data, { withCredentials: true });
+      const res = await api.post(`/delivery-zones`, data, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || "Failed to create delivery zone");
@@ -296,7 +297,7 @@ export const updateDeliveryZone = createAsyncThunk(
   "admin/updateDeliveryZone",
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const res = await axios.patch(`${API_URL}/delivery-zones/${id}`, data, { withCredentials: true });
+      const res = await api.patch(`/delivery-zones/${id}`, data, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || "Failed to update delivery zone");
@@ -309,7 +310,7 @@ export const deleteDeliveryZone = createAsyncThunk(
   "admin/deleteDeliveryZone",
   async (id, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}/delivery-zones/${id}`, { withCredentials: true });
+      await api.delete(`/delivery-zones/${id}`, { withCredentials: true });
       return id;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || "Failed to delete delivery zone");
@@ -320,7 +321,7 @@ export const fetchInventoryAlerts = createAsyncThunk(
   "admin/fetchInventoryAlerts",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/admin/inventory`, { withCredentials: true });
+      const res = await api.get(`/admin/inventory`, { withCredentials: true });
       return res.data.map(item => ({
         id: item.id,
         productName: item.name,
@@ -338,7 +339,7 @@ export const fetchUsers = createAsyncThunk(
   "admin/fetchUsers",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/admin/users`, {
+      const res = await api.get(`/admin/users`, {
         withCredentials: true,
       });
       return res.data;
@@ -355,8 +356,8 @@ export const updateUserRole = createAsyncThunk(
   "admin/updateUserRole",
   async ({ id, role_id }, { rejectWithValue }) => {
     try {
-      const res = await axios.patch(
-        `${API_URL}/admin/users/${id}`,
+      const res = await api.patch(
+        `/admin/users/${id}`,
         { role_id },
         { withCredentials: true }
       );
@@ -374,7 +375,7 @@ export const deleteUser = createAsyncThunk(
   "admin/deleteUser",
   async (id, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}/admin/users/${id}`, {
+      await api.delete(`/admin/users/${id}`, {
         withCredentials: true,
       });
       return id;

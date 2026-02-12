@@ -1,13 +1,14 @@
 import { createSlice, createAsyncThunk, isAnyOf } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:5555';
+// const API_URL = 'http://127.0.0.1:5555';
+import api from '../api/axios';
 const config = { withCredentials: true };
 
 
 export const login = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
   try {
-    const res = await axios.post(`${API_URL}/login`, credentials, config);
+    const res = await api.post(`/login`, credentials, config);
     return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.error || 'Login failed');
@@ -16,7 +17,7 @@ export const login = createAsyncThunk('auth/login', async (credentials, { reject
 
 export const signup = createAsyncThunk('auth/signup', async (userData, { rejectWithValue }) => {
   try {
-    const res = await axios.post(`${API_URL}/signup`, userData, config);
+    const res = await api.post(`/signup`, userData, config);
     return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.error || 'Signup failed');
@@ -25,7 +26,7 @@ export const signup = createAsyncThunk('auth/signup', async (userData, { rejectW
 
 export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
   try {
-    await axios.delete(`${API_URL}/logout`, config);
+    await api.delete(`/logout`, config);
     return null;
   } catch (err) {
     return rejectWithValue(err.response?.data?.error || 'Logout failed');
@@ -34,7 +35,7 @@ export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValu
 
 export const checkSession = createAsyncThunk('auth/checkSession', async (_, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_URL}/check_session`, config);
+    const res = await api.get(`/check_session`, config);
     return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.error || 'No session');
@@ -45,30 +46,33 @@ export const getProfile = createAsyncThunk(
   "auth/getProfile",
   async (_, thunkAPI) => {
     try {
-      const res = await fetch("http://127.0.0.1:5555/profile", {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error("Failed to fetch profile");
-      return await res.json();
+
+      const res = await api.get("/profile");
+      
+      return res.data; 
     } catch (err) {
-      return thunkAPI.rejectWithValue(err.message);
+      return thunkAPI.rejectWithValue(
+        err.response?.data?.error || "Failed to fetch profile"
+      );
     }
   }
 );
 
+import api from '../axios'; // Ensure this points to your axios.js file
+
 export const updateProfile = createAsyncThunk(
   "auth/updateProfile",
   async (data, thunkAPI) => {
-    const res = await fetch("http://127.0.0.1:5555/profile", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: 'include',      
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error("Failed to update profile");
-    return res.json();
+    try {
+
+      const res = await api.patch("/profile", data);
+
+      return res.data; 
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || "Failed to update profile";
+      return thunkAPI.rejectWithValue(errorMsg);
+    }
   }
-  
 );
 
 
