@@ -1,173 +1,148 @@
 import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { fetchCart, processCheckout } from '../features/cartSlice';
-import { showSpinner, hideSpinner, showNotification, showMpesaModal } from '../features/uiSlice';
-import { selectCart, selectCartTotal, selectCartLoading } from '../features/cartSlice';
+import { fetchCart } from '../features/cartSlice';
 
 const Home = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const {items} = useSelector(selectCart);
-  const totalAmount = useSelector(selectCartTotal);
-  const loading = useSelector(selectCartLoading);
 
   React.useEffect(() => {
     dispatch(fetchCart());
   }, [dispatch]);
 
-  const handleCheckout = async () => {
-    if (items.length === 0) {
-      dispatch(showNotification({
-        type: 'warning',
-        title: 'Cart Empty',
-        message: 'Please add items to your cart before checkout.',
-      }));
-      return;
-    }
-    
-    try {
-      await dispatch(processCheckout()).unwrap();
-      
-
-      dispatch(showMpesaModal());
-    } catch (error) {
-      console.error('Checkout failed:', error);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Welcome to Vetty
+    <div className="min-h-screen bg-[#FFFBF0] font-sans">
+      {/* 1. HERO SECTION - */}
+      <section className="container mx-auto px-6 py-16 flex flex-col md:flex-row items-center justify-between">
+        <div className="md:w-1/2 space-y-6">
+          <span className="text-orange-600 font-bold uppercase tracking-wider text-xs">Happy Pets, Happier You</span>
+          <h1 className="text-6xl font-black text-[#2D1B69] leading-tight tracking-tighter">
+            Life is Better <br /> with <span className="text-orange-500">Pets.</span>
           </h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
-            Your trusted partner for veterinary services and pet care products
+          <p className="text-gray-600 max-w-md leading-relaxed font-medium">
+            Welcome to Vetty! We make pet ownership simple, convenient, and fun. From professional veterinary care to premium pet products.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => navigate('/services')}
-              className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+          <div className="flex gap-4 pt-4">
+            <button 
+              onClick={() => navigate('/services')} 
+              className="px-10 py-4 bg-[#2D1B69] text-white rounded-full font-bold hover:bg-purple-900 transition-all shadow-lg text-sm"
             >
-              Browse Services
+              Book A Service
             </button>
-            <button
-              onClick={() => navigate('/products')}
-              className="px-8 py-3 bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-800 transition-colors border border-blue-500"
+            <button 
+              onClick={() => navigate('/products')} 
+              className="px-10 py-4 border-2 border-[#2D1B69] text-[#2D1B69] rounded-full font-bold hover:bg-white/50 transition-all text-sm"
             >
               Shop Products
             </button>
           </div>
         </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Why Choose Vetty?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Quality Care</h3>
-              <p className="text-gray-600">Professional veterinary services with compassionate care for your pets</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Premium Products</h3>
-              <p className="text-gray-600">Wide range of pet care products from trusted brands</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Easy Booking</h3>
-              <p className="text-gray-600">Simple online appointment scheduling and M-Pesa payments</p>
-            </div>
+        <div className="md:w-1/2 mt-12 md:mt-0 relative">
+          <div className="rounded-[3rem] overflow-hidden shadow-2xl border-b-[12px] border-r-[12px] border-orange-400 transform rotate-2">
+            <img 
+              src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80" 
+              alt="Happy Dogs" 
+              className="w-full h-[450px] object-cover -rotate-2 scale-110"
+            />
           </div>
         </div>
       </section>
 
-      {/* Cart Summary */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8">Your Cart</h2>
-            
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading cart...</p>
-              </div>
-            ) : items.length === 0 ? (
-              <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                </svg>
-                <p className="text-gray-600 mb-4">Your cart is empty</p>
-                <button
-                  onClick={() => navigate('/products')}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Start Shopping
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {items.map(item => (
-                  <div key={item.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      {item.product.image_url ? (
-                        <img src={item.product.image_url} alt={item.product.name} className="w-12 h-12 object-cover rounded" />
-                      ) : (
-                        <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                          </svg>
-                        </div>
-                      )}
-                      <div>
-                        <h4 className="font-medium">{item.product.name}</h4>
-                        <p className="text-sm text-gray-600">Qty: {item.quantity} × KES {item.product.price}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">KES {item.quantity * item.product.price}</p>
-                    </div>
-                  </div>
-                ))}
-                
-                <div className="border-t border-gray-200 pt-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-lg font-semibold">Total:</span>
-                    <span className="text-2xl font-bold text-blue-600">KES {totalAmount}</span>
-                  </div>
-                  <button
-                    onClick={handleCheckout}
-                    className="w-full py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
-                  >
-                    Proceed to Payment
-                  </button>
-                </div>
-              </div>
-            )}
+      {/* 2. ABOUT US - */}
+      <section className="container mx-auto px-6 py-24 flex flex-col md:flex-row-reverse items-center gap-16">
+        <div className="md:w-1/2">
+          <span className="text-orange-600 font-bold uppercase tracking-widest text-[10px]">About Us</span>
+          <h2 className="text-5xl font-black text-[#2D1B69] mt-2 mb-6 tracking-tighter leading-tight">
+            We want to make pets as happy as they make us.
+          </h2>
+          <p className="text-gray-600 mb-8 leading-relaxed font-medium">
+            We understand pet ownership can be challenging. Whether you are struggling to find reliable veterinary care or need premium food delivered to your door, Vetty is your trusted partner.
+          </p>
+          <ul className="space-y-4 mb-10">
+            {[
+              'Professional veterinary services with compassionate care.',
+              'Wide range of pet care products from trusted brands.',
+              'Simple online appointment scheduling and M-Pesa payments.'
+            ].map((text, i) => (
+              <li key={i} className="flex items-start gap-3 text-gray-700 font-semibold text-sm">
+                <span className="text-green-500 text-lg">✓</span> {text}
+              </li>
+            ))}
+          </ul>
+          <button className="text-orange-600 font-black text-sm hover:gap-4 transition-all flex items-center gap-2 group">
+            Learn More <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
+          </button>
+        </div>
+        <div className="md:w-1/2">
+          <div className="rounded-tl-[10rem] rounded-br-[10rem] rounded-tr-[3rem] rounded-bl-[3rem] overflow-hidden shadow-2xl border-8 border-white">
+            <img 
+              src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80" 
+              alt="Happy Cat" 
+              className="w-full h-[550px] object-cover" 
+            />
           </div>
+        </div>
+      </section>
+
+      {/* 3. TESTIMONIALS - */}
+      <section className="py-24 bg-white/50">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-orange-600 font-bold uppercase text-[10px] tracking-[0.3em]">Testimonials</span>
+            <h2 className="text-4xl font-black text-[#2D1B69] mt-2 tracking-tighter">Hear what our customers say</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto">
+            <TestimonialCard 
+              name="Grace Olango" 
+              role="Dog Owner" 
+              text="My pet has never felt that safe and secure under full care. I love the grooming and boarding packages they offer. Just perfect!" 
+              initial="G"
+            />
+            <TestimonialCard 
+              name="Bryan" 
+              role="Cat Owner" 
+              text="We have a pure white Maltese that loves to play in the garden. Vetty's grooming services are a lifesaver. Highly recommended!" 
+              initial="B"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* 4. CALL TO ACTION - */}
+      <section className="bg-[#2D1B69] py-24 text-center">
+        <div className="container mx-auto px-6">
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tighter">
+            Ready to give your pet the best life?
+          </h2>
+          <p className="text-purple-200 mb-12 text-lg font-medium opacity-80">
+            Join thousands of happy pet owners who trust Vetty for their needs.
+          </p>
+          <button className="px-14 py-5 bg-orange-500 text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-orange-600 hover:scale-105 transition-all shadow-2xl">
+            Get Started
+          </button>
         </div>
       </section>
     </div>
   );
 };
+
+const TestimonialCard = ({ name, role, text, initial }) => (
+  <div className="bg-orange-600 p-12 rounded-[3rem] text-white relative shadow-2xl transform hover:-translate-y-2 transition-all">
+    <div className="absolute top-6 left-8 text-6xl opacity-20 font-serif">“</div>
+    <p className="mb-10 font-bold leading-relaxed text-lg relative z-10 italic">
+      {text}
+    </p>
+    <div className="flex items-center gap-4">
+      <div className="w-14 h-14 bg-yellow-400 text-[#2D1B69] rounded-full flex items-center justify-center font-black text-xl shadow-inner">
+        {initial}
+      </div>
+      <div>
+        <h4 className="font-black text-base uppercase tracking-tighter">{name}</h4>
+        <p className="text-xs text-orange-200 font-bold uppercase tracking-widest">{role}</p>
+      </div>
+    </div>
+  </div>
+);
 
 export default Home;

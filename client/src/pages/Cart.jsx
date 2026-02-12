@@ -41,6 +41,29 @@ const Cart = () => {
     }
   };
 
+  const handleAddToCart = async (product) => {
+    try {
+      // Ensure product_id is an integer
+      const productId = typeof product.id === 'number' ? product.id : parseInt(product.id);
+      
+      const response = await api.post('/cart-items', {
+        product_id: productId,  // Must be integer
+        quantity: 1
+      });
+      
+      dispatch(showNotification({ 
+        type: 'success', 
+        message: 'Added to cart!' 
+      }));
+    } catch (error) {
+      console.error('Cart error:', error.response?.data);
+      dispatch(showNotification({ 
+        type: 'error', 
+        message: error.response?.data?.message || 'Failed to add to cart' 
+      }));
+    }
+  };
+
   if (items.length === 0) return (
     <div className="text-center py-20">
       <h2 className="text-2xl font-bold text-gray-400">Your cart is empty</h2>

@@ -1,7 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 
-
 // Page Imports
 import Home from '../pages/Home';
 import Login from '../pages/Login';
@@ -27,7 +26,6 @@ import AdminDashboard from '../pages/admin/AdminDashboard';
 import Layout from '../pages/Layout';
 import ErrorPage from '../pages/ErrorPage';
 
-
 const router = createBrowserRouter([
   {
     path: '/',
@@ -42,46 +40,39 @@ const router = createBrowserRouter([
       { path: 'products/:id', element: <ProductDetail /> },
       { path: 'services', element: <Services /> },
       { path: 'services/:id', element: <ServiceDetail /> },
-
+      { path: 'cart', element: <Cart /> },
+      
+      // Combined redundant M-Pesa routes into one standard path
       { path: 'mpesa-payment', element: <MpesaForm /> },
 
-      {path: 'cart', element: <Cart/>},
-      { path: 'mpesaForm', element: <MpesaForm /> },
-      
-
-
       // --- 2. Shared Dashboard (History & Account) ---
-      // Fix: Added lowercase roles to handle backend data inconsistencies
       {
         element: <ProtectedRoute allowedRoles={['User', 'Seller', 'Admin', 'user', 'seller', 'admin']} />,  
         children: [
           { path: 'dashboard', element: <UserDashboard /> },
           { path: 'profile', element: <Profile /> },
-          { path: 'profile/user-dashboard', element: <UserDashboard /> },
-
         ],
       },
 
-      // --- 3. Management (Sellers & Admins) ---
+      // --- 3. Management (Sellers & Admins Only) ---
       {
         element: <ProtectedRoute allowedRoles={['Admin', 'Seller', 'admin', 'seller']} />,
         children: [
-          { path: 'profile', element: <Profile /> },
+          // Standardized admin paths
           { path: 'admin/dashboard', element: <AdminDashboard /> },
           { path: 'admin/products', element: <ProductAdmin /> },
-          { path: 'admin/services', element: <ServiceAdmin/> },
+          { path: 'admin/services', element: <ServiceAdmin /> },
           { path: 'admin/approval-stats', element: <ApprovalStats /> },
           { path: 'admin/orders', element: <AdminOrders /> },
           { path: 'admin/categories', element: <CategoryAdmin /> },
           { path: 'admin/delivery-zones', element: <DeliveryZoneAdmin /> },
           { path: 'admin/inventory-alert', element: <InventoryAlertAdmin /> },
           { path: 'admin/users', element: <AdminUsers /> },
-
         ],
       },
-      { path: '', element: <Navigate to="/home" replace /> },
 
-      
+      // --- Wildcards ---
+      { path: '', element: <Navigate to="/home" replace /> },
       { path: '*', element: <ErrorPage /> },
     ],
   },

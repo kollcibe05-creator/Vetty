@@ -641,3 +641,12 @@ export const {
 } = adminSlice.actions;
 
 export default adminSlice.reducer;
+// --- SELECTORS ---
+// These allow components like your Navbar to read the data
+export const selectInventoryAlerts = (state) => state.admin.inventoryAlerts || [];
+export const selectAllOrders = (state) => state.admin.allOrders || [];
+export const selectAdminLoading = (state) => state.admin.loading;
+export const selectAdminError = (state) => state.admin.error;
+export const selectDeliveryZones = (state) => state.admin.deliveryZones || [];
+export const selectAdminUsers = (state) => state.admin.users || [];
+export const selectAdminDashboard = (state) => state.admin.dashboard || {};
