@@ -2,7 +2,9 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { showSpinner, showNotification, hideSpinner } from "./uiSlice";
 
-const API_URL = 'http://127.0.0.1:5555';
+// testing
+import api from '../api/axios';
+// const API_URL = 'http://127.0.0.1:5555';
 
 // --- Async Thunks ---
 export const fetchProducts = createAsyncThunk(
@@ -16,7 +18,7 @@ export const fetchProducts = createAsyncThunk(
       if (filters.search) queryParams.search = filters.search;
       if (filters.sortBy) queryParams.sort_by = filters.sortBy;
       if (filters.sortOrder) queryParams.sort_order = filters.sortOrder;
-      const res = await axios.get(`${API_URL}/products`, { params: queryParams });
+      const res = await api.get(`/products`, { params: queryParams });
       
       if (!background) dispatch(hideSpinner());
       return res.data;
@@ -35,7 +37,7 @@ export const fetchProductById = createAsyncThunk(
   async (productId, { dispatch, rejectWithValue }) => {
     try {
       dispatch(showSpinner({message: "Fetching details..."}));
-      const res = await axios.get(`${API_URL}/products/${productId}`);
+      const res = await api.get(`/products/${productId}`);
       dispatch(hideSpinner());
       return res.data;
     } catch (err) {
@@ -50,7 +52,7 @@ export const searchProducts = createAsyncThunk(
   'products/searchProducts',
   async (query, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/products/search`, { params: { q: query } });
+      const res = await api.get(`/products/search`, { params: { q: query } });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Search failed');
