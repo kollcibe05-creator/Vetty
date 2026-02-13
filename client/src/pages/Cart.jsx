@@ -15,6 +15,13 @@ const Cart = () => {
   const [zones, setZones] = useState([]);
   const [formData, setFormData] = useState({ zone_id: '', address: '' });
 
+//moved here
+const selectedZone = zones.find(z => z.id === Number(formData.zone_id));
+const deliveryFee = selectedZone ? selectedZone.delivery_fee : 0;
+
+const finalTotal = Number(totalAmount) + Number(deliveryFee);
+
+
   useEffect(() => {
     dispatch(fetchCart());
 
@@ -50,10 +57,8 @@ const Cart = () => {
   );
 
 
-const selectedZone = zones.find(z => z.id === Number(formData.zone_id));
-const deliveryFee = selectedZone ? selectedZone.delivery_fee : 0;
 
-const finalTotal = Number(totalAmount) + Number(deliveryFee);
+//was here
 
 
   return (

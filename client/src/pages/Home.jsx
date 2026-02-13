@@ -118,7 +118,9 @@ const Home = () => {
           <p className="text-purple-200 mb-12 text-lg font-medium opacity-80">
             Join thousands of happy pet owners who trust Vetty for their needs.
           </p>
-          <button className="px-14 py-5 bg-orange-500 text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-orange-600 hover:scale-105 transition-all shadow-2xl">
+          <button className="px-14 py-5 bg-orange-500 text-white rounded-full font-black uppercase tracking-widest text-xs hover:bg-orange-600 hover:scale-105 transition-all shadow-2xl"
+           onClick={navigate('signup')}
+          >
             Get Started
           </button>
         </div>

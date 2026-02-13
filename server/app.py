@@ -676,6 +676,8 @@ class MpesaPayment(Resource):
         phone = data.get('phone_number')
         amount = int(float(data.get('amount'))) 
         order_id = data.get('order_id') # Ensure this isn't None!
+        appointment_id = data.get('appointment_id')
+        
 
         business_shortcode = "174379"
         passkey = os.getenv('MPESA_KEY')
@@ -686,9 +688,8 @@ class MpesaPayment(Resource):
         password = base64.b64encode(data_to_encode.encode()).decode('utf-8')
 
 
-        ##########ADDED###################
-        if not order_id:
-            return {"error": "Order ID required"}, 400
+        if not order_id and not appointment_id:
+            return {"error": "Order ID or Appointment ID required"}, 400
 
         try:
             access_token = get_mpesa_access_token()
@@ -706,7 +707,7 @@ class MpesaPayment(Resource):
                 "PartyB": business_shortcode,
                 "PhoneNumber": phone,
                 "CallBackURL": f"{os.getenv('BASE_URL')}/payments/callback",   #needs change
-                "AccountReference": f"Order{order_id}" if order_id else "VettyPay",
+                "AccountReference": "AccountReference": f"Order{order_id}" if order_id else f"Appointment{appointment_id}",
                 "TransactionDesc": "Vetty Payment"
             }
 
@@ -723,6 +724,7 @@ class MpesaPayment(Resource):
                 new_payment = Payment(
                     user_id=user_id,
                     order_id=order_id,
+                    appointment_id=appointment_id,
                     payment_method='M-Pesa',
                     phone_number=phone,
                     amount=amount,
@@ -753,6 +755,9 @@ class MpesaCallback(Resource):
             
             if payment.order:
                 payment.order.status = 'Paid'
+            if payment.appointment:
+                payment.appointment.status = 'Paid'
+
             db.session.commit()
             
         return {"ResultCode": 0, "ResultDesc": "Success"}, 200
