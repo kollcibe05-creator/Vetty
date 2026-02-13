@@ -707,7 +707,7 @@ class MpesaPayment(Resource):
                 "PartyB": business_shortcode,
                 "PhoneNumber": phone,
                 "CallBackURL": f"{os.getenv('BASE_URL')}/payments/callback",   #needs change
-                "AccountReference": "AccountReference": f"Order{order_id}" if order_id else f"Appointment{appointment_id}",
+                "AccountReference":f"Order{order_id}" if order_id else f"Appointment{appointment_id}",
                 "TransactionDesc": "Vetty Payment"
             }
 
