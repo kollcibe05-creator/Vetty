@@ -658,7 +658,7 @@ class AdminAppointmentList(Resource):
 # --- MPESA / PAYMENT ---
 
 
-# Helper to get Daraja Token
+# to get Daraja Token
 def get_mpesa_access_token():
     consumer_key = os.getenv('MPESA_CONSUMER_KEY')
     consumer_secret = os.getenv('MPESA_CONSUMER_SECRET')
@@ -675,7 +675,7 @@ class MpesaPayment(Resource):
         data = request.get_json()
         phone = data.get('phone_number')
         amount = int(float(data.get('amount'))) 
-        order_id = data.get('order_id') # Ensure this isn't None!
+        order_id = data.get('order_id') 
         appointment_id = data.get('appointment_id')
         
 
@@ -683,7 +683,7 @@ class MpesaPayment(Resource):
         passkey = os.getenv('MPESA_KEY')
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         
-        # Proper Password Generation
+        # Password Generation
         data_to_encode = business_shortcode + passkey + timestamp
         password = base64.b64encode(data_to_encode.encode()).decode('utf-8')
 
@@ -706,7 +706,7 @@ class MpesaPayment(Resource):
                 "PartyA": phone,
                 "PartyB": business_shortcode,
                 "PhoneNumber": phone,
-                "CallBackURL": f"{os.getenv('BASE_URL')}/payments/callback",   #needs change
+                "CallBackURL": f"{os.getenv('BASE_URL')}/payments/callback",   #render URL 
                 "AccountReference":f"Order{order_id}" if order_id else f"Appointment{appointment_id}",
                 "TransactionDesc": "Vetty Payment"
             }
@@ -719,7 +719,7 @@ class MpesaPayment(Resource):
             
             res_data = response.json()
             
-            # Check if Safaricom actually accepted the request (ResponseCode '0' is success)
+
             if res_data.get('ResponseCode') == '0':
                 new_payment = Payment(
                     user_id=user_id,
@@ -739,13 +739,13 @@ class MpesaPayment(Resource):
 
         except Exception as e:
             db.session.rollback()
-            print(f"DEBUG ERROR: {str(e)}") # This shows up in your terminal
+            print(f"DEBUG ERROR: {str(e)}")
             return {"error": str(e)}, 500
 
 class MpesaCallback(Resource):
     def post(self):
         data = request.get_json()
-        # Look for 'ResultCode': 0 (Success)
+        
         result_code = data['Body']['stkCallback']['ResultCode']
         checkout_id = data['Body']['stkCallback']['CheckoutRequestID']
         
