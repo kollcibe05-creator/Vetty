@@ -28,9 +28,6 @@ const Navbar = () => {
         >
           <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center text-[#2D1B69] transform group-hover:rotate-12 transition-transform shadow-sm">
             🐾
-            {/* <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
-            </svg> */}
           </div>
           <span className="text-2xl font-black text-[#2D1B69] tracking-tighter uppercase">Vetty</span>
         </div>
@@ -79,6 +76,14 @@ const Navbar = () => {
                     <AdminIconLink to="/admin/dashboard" title="Dashboard">📊</AdminIconLink>
                     <AdminIconLink to="/admin/products" title="Products">📦</AdminIconLink>
                     <AdminIconLink to="/admin/orders" title="Orders">📃</AdminIconLink>
+
+                    {/* New Icons for Remaining Paths */}
+                    <AdminIconLink to="/admin/services" title="Services">🛠️</AdminIconLink>
+                    <AdminIconLink to="/admin/categories" title="Categories">🏷️</AdminIconLink>
+                    <AdminIconLink to="/admin/delivery-zones" title="Delivery Zones">📍</AdminIconLink>
+                    <AdminIconLink to="/admin/users" title="User Management">👥</AdminIconLink>
+                    <AdminIconLink to="/admin/approval-stats" title="Approval Stats">📈</AdminIconLink>
+                    
                     
                     {/* Inventory Alert */}
                     <RouterNavLink to="/admin/inventory-alert" className="relative w-10 h-10 bg-red-50 text-red-600 rounded-full flex items-center justify-center hover:bg-red-100 transition-colors">
