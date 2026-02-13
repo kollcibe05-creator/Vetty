@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { selectCart, fetchCart, processCheckout, selectCartTotal } from '../features/cartSlice';
 import CartItem from '../components/CartItem';
 import axios from 'axios';
+import api from '../api/axios';
 
 const Cart = () => {
   const dispatch = useDispatch();
@@ -17,7 +18,7 @@ const Cart = () => {
   useEffect(() => {
     dispatch(fetchCart());
 
-    axios.get('http://127.0.0.1:5555/delivery-zones')
+    api.get('/delivery-zones')
       .then(res => setZones(res.data));
   }, [dispatch]);
 

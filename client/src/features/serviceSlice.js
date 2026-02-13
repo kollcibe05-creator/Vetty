@@ -4,7 +4,8 @@ import axios from 'axios';
 import { hideSpinner, showNotification, showSpinner } from "./uiSlice"
 
 
-const API_URL = 'http://127.0.0.1:5555';
+// const API_URL = 'http://127.0.0.1:5555';
+import api from '../api/axios';
 
 
 export const fetchServices = createAsyncThunk(
@@ -31,7 +32,7 @@ export const fetchServices = createAsyncThunk(
         params.sort_order = filters.sortOrder;
       }
 
-      const res = await axios.get(`${API_URL}/services`, { params });
+      const res = await api.get(`/services`, { params });
       dispatch(hideSpinner());
       return res.data;
     } catch (err) {
@@ -45,7 +46,7 @@ export const fetchServiceById = createAsyncThunk(
   async (serviceId, { dispatch, rejectWithValue }) => {
     try {
       dispatch(showSpinner({message: "Fetching service detail..."}));
-      const res = await axios.get(`${API_URL}/services/${serviceId}`);
+      const res = await api.get(`/services/${serviceId}`);
       dispatch(hideSpinner());
       return res.data;
     } catch (err) {
@@ -64,7 +65,7 @@ export const searchServices = createAsyncThunk(
   'services/searchServices',
   async (query, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/services/search`, { 
+      const res = await api.get(`/services/search`, { 
         params: { q: query } 
       });
       return res.data;
@@ -78,7 +79,7 @@ export const fetchAppointments = createAsyncThunk(
   'services/fetchAppointments',
   async (userId, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/appointments`, {
+      const res = await api.get(`/appointments`, {
         params: { user_id: userId }
       });
       return res.data;
@@ -92,7 +93,7 @@ export const patchService = createAsyncThunk(
     "services/patch", (formData, {dispatch, rejectWithValue}) => {
         const {id, ...fields} = formData;
         dispatch(showSpinner({message: "Saving Changes..."}))
-        return axios.patch(`${API_URL}/services/${id}`, fields, {
+        return api.patch(`/services/${id}`, fields, {
             headers: {"Content-Type": "application/json"},
         })
         .then(res => {
@@ -119,7 +120,7 @@ export const deleteService = createAsyncThunk(
     'services/delete', 
     (id, {dispatch, rejectWithValue}) => {
         dispatch(showSpinner({message: 'Deleting Service...'}))
-        return axios.delete(`${API_URL}/services/${id}`)
+        return api.delete(`/services/${id}`)
         .then(() => {
             dispatch(hideSpinner())
             dispatch(showNotification({
@@ -141,7 +142,7 @@ export const postService = createAsyncThunk(
     "services/post", (formData, {dispatch, rejectWithValue}) => {
         const {id, ...fields} = formData;
         dispatch(showSpinner({message: "Saving Changes..."}))
-        return axios.post(`${API_URL}/services`, formData, {
+        return api.post(`/services`, formData, {
             headers: {"Content-Type": "application/json"},
         })
         .then(res => {
@@ -170,7 +171,7 @@ export const createAppointment = createAsyncThunk(
   'services/createAppointment',
   async (bookingData, { dispatch, rejectWithValue }) => {
     try {
-      const res = await axios.post(`${API_URL}/appointments`, bookingData, {
+      const res = await api.post(`/appointments`, bookingData, {
         withCredentials: true 
       });
       dispatch(showNotification({ type: 'success', message: 'Booked successfully!' }));
@@ -187,7 +188,7 @@ export const createAppointment = createAsyncThunk(
   'user/fetchOrders',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/my-orders`, { withCredentials: true });
+      const res = await api.get(`/my-orders`, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to fetch orders');
@@ -198,7 +199,7 @@ export const fetchUserAppointments = createAsyncThunk(
   'user/fetchAppointments',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/my-appointments`, { withCredentials: true });
+      const res = await api.get(`/my-appointments`, { withCredentials: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to fetch appointments');

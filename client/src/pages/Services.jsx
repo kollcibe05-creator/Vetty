@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import api from '../api/axios';
+
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -32,7 +34,7 @@ const Services = () => {
   const [selectedZoneId, setSelectedZoneId] = useState('');
   useEffect(() => {
     if (selectedService) {
-      axios.get('http://127.0.0.1:5555/delivery-zones', {
+      api.get('/delivery-zones', {
         headers: { 
           'ngrok-skip-browser-warning': 'true',
           'Accept': 'application/json',
