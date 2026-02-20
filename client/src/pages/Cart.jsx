@@ -4,20 +4,28 @@ import { useNavigate } from 'react-router-dom';
 import { selectCart, fetchCart, processCheckout, selectCartTotal } from '../features/cartSlice';
 import CartItem from '../components/CartItem';
 import axios from 'axios';
+import api from '../api/axios';
 
 const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const  {items} = useSelector(selectCart);
+  const  {items = []} = useSelector(selectCart);
   const  totalAmount  = useSelector(selectCartTotal);
   
   const [zones, setZones] = useState([]);
   const [formData, setFormData] = useState({ zone_id: '', address: '' });
 
+//moved here
+const selectedZone = zones.find(z => z.id === Number(formData.zone_id));
+const deliveryFee = selectedZone ? selectedZone.delivery_fee : 0;
+
+const finalTotal = Number(totalAmount) + Number(deliveryFee);
+
+
   useEffect(() => {
     dispatch(fetchCart());
 
-    axios.get('http://127.0.0.1:5555/delivery-zones')
+    api.get('/delivery-zones')
       .then(res => setZones(res.data));
   }, [dispatch]);
 
@@ -49,10 +57,8 @@ const Cart = () => {
   );
 
 
-const selectedZone = zones.find(z => z.id === Number(formData.zone_id));
-const deliveryFee = selectedZone ? selectedZone.delivery_fee : 0;
 
-const finalTotal = Number(totalAmount) + Number(deliveryFee);
+//was here
 
 
   return (

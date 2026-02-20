@@ -240,16 +240,15 @@ class CartResource(Resource):
 
 
 class CartItemResource(Resource):
-
     def post(self):
         user_id = session.get('user_id')
         if not user_id:
             return {"error": "Unauthorized"}, 401
 
         data = request.get_json()
-
         product_id = data.get("product_id")
         product = db.session.get(Product, product_id)
+        
         if not product:
             return {"error": "Product not found"}, 404
 
@@ -257,31 +256,30 @@ class CartItemResource(Resource):
         if quantity > product.stock_quantity:
             return {"error": "Insufficient stock"}, 400
 
-
         cart = Cart.query.filter_by(user_id=user_id).first()
         if not cart:
             cart = Cart(user_id=user_id)
             db.session.add(cart)
             db.session.commit()
 
-        existing_item = CartItem.query.filter_by(
+        cart_item = CartItem.query.filter_by(
             cart_id=cart.id,
             product_id=product_id
         ).first()
 
-        if existing_item:
-            existing_item.quantity += quantity
+        if cart_item:
+            cart_item.quantity += quantity
         else:
-            new_item = CartItem(
+            cart_item = CartItem(
                 cart_id=cart.id,
                 product_id=product_id,
                 quantity=quantity
             )
-            db.session.add(new_item)
+            db.session.add(cart_item)
 
         db.session.commit()
 
-        return new_item.to_dict(), 201
+        return cart_item.to_dict(), 201
 
     def delete(self, item_id):
         user_id = session.get('user_id')
@@ -660,7 +658,7 @@ class AdminAppointmentList(Resource):
 # --- MPESA / PAYMENT ---
 
 
-# Helper to get Daraja Token
+# to get Daraja Token
 def get_mpesa_access_token():
     consumer_key = os.getenv('MPESA_CONSUMER_KEY')
     consumer_secret = os.getenv('MPESA_CONSUMER_SECRET')
@@ -677,20 +675,21 @@ class MpesaPayment(Resource):
         data = request.get_json()
         phone = data.get('phone_number')
         amount = int(float(data.get('amount'))) 
-        order_id = data.get('order_id') # Ensure this isn't None!
+        order_id = data.get('order_id') 
+        appointment_id = data.get('appointment_id')
+        
 
         business_shortcode = "174379"
         passkey = os.getenv('MPESA_KEY')
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         
-        # Proper Password Generation
+        # Password Generation
         data_to_encode = business_shortcode + passkey + timestamp
         password = base64.b64encode(data_to_encode.encode()).decode('utf-8')
 
 
-        ##########ADDED###################
-        if not order_id:
-            return {"error": "Order ID required"}, 400
+        if not order_id and not appointment_id:
+            return {"error": "Order ID or Appointment ID required"}, 400
 
         try:
             access_token = get_mpesa_access_token()
@@ -707,8 +706,8 @@ class MpesaPayment(Resource):
                 "PartyA": phone,
                 "PartyB": business_shortcode,
                 "PhoneNumber": phone,
-                "CallBackURL": "http://127.0.0.1:5555/callback", 
-                "AccountReference": f"Order{order_id}" if order_id else "VettyPay",
+                "CallBackURL": f"{os.getenv('BASE_URL')}/payments/callback",   #render URL 
+                "AccountReference":f"Order{order_id}" if order_id else f"Appointment{appointment_id}",
                 "TransactionDesc": "Vetty Payment"
             }
 
@@ -720,11 +719,12 @@ class MpesaPayment(Resource):
             
             res_data = response.json()
             
-            # Check if Safaricom actually accepted the request (ResponseCode '0' is success)
+
             if res_data.get('ResponseCode') == '0':
                 new_payment = Payment(
                     user_id=user_id,
                     order_id=order_id,
+                    appointment_id=appointment_id,
                     payment_method='M-Pesa',
                     phone_number=phone,
                     amount=amount,
@@ -739,13 +739,13 @@ class MpesaPayment(Resource):
 
         except Exception as e:
             db.session.rollback()
-            print(f"DEBUG ERROR: {str(e)}") # This shows up in your terminal
+            print(f"DEBUG ERROR: {str(e)}")
             return {"error": str(e)}, 500
 
 class MpesaCallback(Resource):
     def post(self):
         data = request.get_json()
-        # Look for 'ResultCode': 0 (Success)
+        
         result_code = data['Body']['stkCallback']['ResultCode']
         checkout_id = data['Body']['stkCallback']['CheckoutRequestID']
         
@@ -755,6 +755,9 @@ class MpesaCallback(Resource):
             
             if payment.order:
                 payment.order.status = 'Paid'
+            if payment.appointment:
+                payment.appointment.status = 'Paid'
+
             db.session.commit()
             
         return {"ResultCode": 0, "ResultDesc": "Success"}, 200
