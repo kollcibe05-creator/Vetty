@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { selectCart, fetchCart, processCheckout, selectCartTotal } from '../features/cartSlice';
 import CartItem from '../components/CartItem';
 import axios from 'axios';
+import api from '../api/axios';
 
 const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const  {items} = useSelector(selectCart);
+  const  {items = []} = useSelector(selectCart);
   const  totalAmount  = useSelector(selectCartTotal);
   
   const [zones, setZones] = useState([]);
@@ -17,7 +18,7 @@ const Cart = () => {
   useEffect(() => {
     dispatch(fetchCart());
 
-    axios.get('http://127.0.0.1:5555/delivery-zones')
+    api.get('/delivery-zones')
       .then(res => setZones(res.data));
   }, [dispatch]);
 
@@ -38,29 +39,6 @@ const Cart = () => {
       });
     } catch (err) {
       console.error("Checkout failed", err);
-    }
-  };
-
-  const handleAddToCart = async (product) => {
-    try {
-      // Ensure product_id is an integer
-      const productId = typeof product.id === 'number' ? product.id : parseInt(product.id);
-      
-      const response = await api.post('/cart-items', {
-        product_id: productId,  // Must be integer
-        quantity: 1
-      });
-      
-      dispatch(showNotification({ 
-        type: 'success', 
-        message: 'Added to cart!' 
-      }));
-    } catch (error) {
-      console.error('Cart error:', error.response?.data);
-      dispatch(showNotification({ 
-        type: 'error', 
-        message: error.response?.data?.message || 'Failed to add to cart' 
-      }));
     }
   };
 

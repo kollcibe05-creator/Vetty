@@ -3,14 +3,12 @@ import { NavLink as RouterNavLink, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../features/authSlice';
 import { selectCart } from '../features/cartSlice';
-// Removed the broken import causing the blank screen
+
 
 const Navbar = () => {
   const { isAuthenticated, user } = useSelector(state => state.auth);
-  const cart = useSelector(selectCart);
-  
-  // FIXED: Used a safe inline selector instead of the missing import
-  // If your admin slice has a different name (e.g., state.admin.inventory), update this path.
+  const {items = []} = useSelector(selectCart);
+
   const alerts = useSelector((state) => state.admin?.inventoryAlerts || []); 
   
   const dispatch = useDispatch();
@@ -58,15 +56,15 @@ const Navbar = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
-                    {cart.items?.length > 0 && (
+                    {items?.length > 0 && (
                       <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-[#FFFBF0]">
-                        {cart.items.length}
+                        {items.length}
                       </span>
                     )}
                   </RouterNavLink>
 
                   {/* User Dashboard Link */}
-                  <RouterNavLink to="/profile/user-dashboard" className="hidden lg:block text-sm font-bold text-[#2D1B69] hover:text-orange-600">
+                  <RouterNavLink to="/dashboard" className="hidden lg:block text-sm font-bold text-[#2D1B69] hover:text-orange-600">
                     My Dashboard
                   </RouterNavLink>
                 </div>
@@ -128,7 +126,7 @@ const Navbar = () => {
   );
 };
 
-// --- SUB-COMPONENTS ---
+
 
 const ThemeNavLink = ({ to, children }) => {
   return (

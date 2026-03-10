@@ -1,14 +1,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:5555';
+import api from '../api/axios';
+// const API_URL = 'http://127.0.0.1:5555';
 
 
 export const fetchReviews = createAsyncThunk(
   'reviews/fetchReviews',
   async (params = {}, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${API_URL}/reviews`, { params });
+      const res = await api.get(`/reviews`, { params });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to fetch reviews');
@@ -20,7 +21,7 @@ export const createReview = createAsyncThunk(
   'reviews/createReview',
   async (reviewData, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${API_URL}/reviews`, reviewData, {
+      const res = await api.post(`/reviews`, reviewData, {
         withCredentials: true
       });
       return res.data;
@@ -34,7 +35,7 @@ export const updateReview = createAsyncThunk(
   'reviews/updateReview',
   async ({ reviewId, reviewData }, { rejectWithValue }) => {
     try {
-      const res = await axios.patch(`${API_URL}/reviews/${reviewId}`, reviewData);
+      const res = await api.patch(`/reviews/${reviewId}`, reviewData);
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to update review');
@@ -46,7 +47,7 @@ export const deleteReview = createAsyncThunk(
   'reviews/deleteReview',
   async (reviewId, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}/reviews/${reviewId}`);
+      await api.delete(`/reviews/${reviewId}`);
       return reviewId;
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || 'Failed to delete review');

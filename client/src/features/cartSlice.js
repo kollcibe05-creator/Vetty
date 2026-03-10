@@ -157,6 +157,11 @@ const cartSlice = createSlice({
         state.loading = false;
         state.totalAmount = 0; 
       })
+      .addCase(addToCart.fulfilled, (state, action) => {
+          state.items = action.payload.items;
+          state.totalAmount = action.payload.total_amount;
+      })
+
       .addMatcher(
         (action) => action.type.startsWith('cart/') && action.type.endsWith('/pending'),
         (state) => { state.loading = true; }
