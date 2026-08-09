@@ -45,7 +45,7 @@ bcrypt = Bcrypt(app)
 
 api = Api(app)
 
-CORS(app, supports_credentials=True, origins=[
+CORS(app, supports_credentials=True, origins=[  # supports_credentials allows cookies to pass back and forth
     "http://localhost:5173", 
     "http://127.0.0.1:5173",
     "http://localhost:5174",
@@ -56,10 +56,27 @@ CORS(app, supports_credentials=True, origins=[
     "https://stacy-undegrading-osteopathically.ngrok-free.dev"
 ])
 
+# The config. below hardens your Flask application's session cookies against session hijacking and Cross-Site Request Forgery (CSRF) attacks.
+# It is standard production security middleware for managing user authentication state.
+# SESSION_COOKIE_SECURE=True Prevents MITM interception ~ instructs browsers to send the session cookie only over encrypted HTTPS connections
+# If a request is sent over plain HTTP, the browser strips the cookie out entirely, preventing network attackers from sniffing session keys in plain text
+# For the case of plain fetch, one can use
+# fetch('https://api.yourdomain.com/api/user', {
+#     method: 'GET', 
+#     credentials: 'include' //Attaches session cookies automatically
+# })
+# .then( r => r.json())
+# .then(data => data)
+# .catch(err => console.error(err))
+
+# Access-Control-Allow-Origin header cannot be * but explicitly name the frontend domain
 app.config.update(
-    SESSION_COOKIE_SAMESITE='Lax',
-    SESSION_COOKIE_SECURE=True 
+    SESSION_COOKIE_SAMESITE='Lax', # Required for cross-domain fetch/axios requests  # SameSite=None if separate domains
+    SESSION_COOKIE_SECURE=True  # MANDATORY by browsers when SameSite="None"
 )
+
+# On the frontend, your fetch calls must include credentials: 'include' or Axios must use withCredentials: true for the browser to send and receive the cookie
+
 
 
 
